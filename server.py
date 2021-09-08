@@ -3,8 +3,19 @@ import json
 import websockets
 import argparse
 from websockets.exceptions import ConnectionClosedError
-from clients.client_in import ClientIn
-from clients.client_out import ClientOut
+from database.database import db
+from actions.actions import ActionManager
+from apps.actions import actions
+from tasks.tasks import TaskManager
+from tasks.register import tasks
+from models.register import models
+from models.models import Model
+from utils.get_snapshot import get_snapshot
+from utils import serialize_response
+
+TASKS = TaskManager(tasks)
+ACTIONS = ActionManager(actions)
+db.load()
 
 
 class Server:
@@ -17,10 +28,9 @@ class Server:
         self.address = address
         self.port = port
         self.debug = debug
-        self.state = {"feed": ""}
-        self.clients = set()
+        self.clients = dict()
         self.commands = {
-            "run": self.run_std(),
+            "run": self.run_default(),
             "dev": self.run_dev(),
             "shell": self.run_shell(),
             "client-in": self.run_client_in(),
@@ -32,14 +42,16 @@ class Server:
             print(*args)
 
     def run_client_in(self):
+        from utils.client_in import ClientIn
         client = ClientIn()
         return lambda: client.run()
 
     def run_client_out(self):
+        from utils.client_out import ClientOut
         client = ClientOut()
         return lambda: client.run()
 
-    def run_std(self):
+    def run_default(self):
         return lambda: websockets.serve(self.handle, self.address, self.port)
 
     def run_dev(self):
@@ -50,42 +62,53 @@ class Server:
     def run_shell(self):
         from IPython import embed
 
-        # for model in models:
-        #     exec(f'from {model.__module__} import {model.__name__}', globals())
-        # from database.database import db
-        # from database.utils import file_to_string, string_to_file
-        # from models.utils import hydrate
+        for model in models:
+            exec(f'from {model.__module__} import {model.__name__}', globals())
+
+        from database.utils import file_to_string, string_to_file
+        from models.utils import hydrate
+
         return lambda: embed()
 
-    def state_event(self):
-        return json.dumps(self.state)
+    def state_event(self, websocket):
+        snapshot = get_snapshot(self.clients[websocket], db)
+        return json.dumps(snapshot)
 
-    async def notify_state(self):
+    async def notify_state(self, response):
         self.log("[NOTIFY STATE]")
         if self.clients:  # asyncio.wait doesn't accept an empty list
-            message = self.state_event()
-            for client in self.clients:
-                await client.send(message)
+            payload = serialize_response(response)
+            for client in self.clients.keys():
+                await client.send(payload)
 
     async def register(self, websocket):
         self.log("[REGISTER]")
-        self.clients.add(websocket)
+        self.clients[websocket] = dict()
+
+    def subscribe(self, websocket, model: Model = None, pks: set = set()):
+        self.clients[websocket][model] = pks
 
     async def unregister(self, websocket):
         self.log(["UNREGISTER"])
-        self.clients.remove(websocket)
+        del self.clients[websocket]
 
     async def handle(self, websocket, address):
         self.log("[STARTING]", self.address)
-        # register(websocket) sends user_event() to websocket
         await self.register(websocket)
         try:
-            await websocket.send(self.state_event())
+            await websocket.send(self.state_event(websocket))
             async for payload in websocket:
                 data = json.loads(payload)
-                if out_msg := data["feed"]:
-                    self.state["feed"] = out_msg
-                    await self.notify_state()
+                print(data)
+                for action_name in data.keys():
+                    if response := ACTIONS[action_name].run(
+                        websocket=websocket,
+                        server=self,
+                        db=db,
+                        **data.get(action_name)
+                    ):
+                        await self.notify_state(response)
+
         except ConnectionClosedError:
             self.log(f"[CONNECTION ERROR] {websocket.host} -- {websocket.local_address}")
 
@@ -113,6 +136,6 @@ class Server:
             except KeyboardInterrupt:
                 self.log("[SHUTDOWN]")
             finally:
-                pass
+                db.save()
         else:
             self.log(f"[ERROR] -- {args.cmd} is not a valid option.")
