@@ -1,5 +1,5 @@
 from models import Model
-from models.utils import encrypt
+from utils import encrypt
 
 class User(Model):
     username: str = ''

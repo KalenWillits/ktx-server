@@ -1,5 +1,5 @@
 import hashlib
-from config import settings
+import settings
 
 
 def encrypt(string):

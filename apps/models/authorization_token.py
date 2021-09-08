@@ -1,8 +1,8 @@
-from models.models import Model
+from models import Model
 import pytz
 import secrets
 from datetime import timedelta, datetime
-from config.settings import settings
+import settings
 
 class AuthorizationToken(Model):
     token: str = ''

@@ -1,4 +1,4 @@
-from models.utils import hydrate
+from .hydrate import hydrate
 
 
 def get_snapshot(subscription, db):

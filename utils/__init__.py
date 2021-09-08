@@ -9,3 +9,5 @@ from .is_datetime import is_datetime
 from .encrypt import encrypt
 from .parse_nums import parse_nums
 from .schema import Schema
+from .generate_salt import generate_salt
+from .is_numeric import is_numeric

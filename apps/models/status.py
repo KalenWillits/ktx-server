@@ -3,7 +3,7 @@ import pytz
 from datetime import datetime
 
 
-class ServerStatus(Model):
+class Status(Model):
     pk: int = 0
     content: str = ''
     timestamp: str = str(pytz.timezone('UTC').localize(datetime.utcnow()))

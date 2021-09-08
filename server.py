@@ -5,10 +5,9 @@ import argparse
 
 from websockets.exceptions import ConnectionClosedError
 
-from database.database import db
-from apps.actions import ACTIONS
-from tasks import TASKS
-from models import MODELS, Model
+from database import db
+from register import ACTIONS, MODELS, TASKS
+from models import Model
 from utils import get_snapshot
 
 

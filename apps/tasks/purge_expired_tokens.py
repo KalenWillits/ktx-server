@@ -6,7 +6,7 @@ import pandas as pd
 from datetime import datetime
 
 class PurgeExpiredTokens(Task):
-    type = "perodic"
+    type = "periodic"
 
     async def execute(*args, **kwargs):
         db = kwargs.get("db")

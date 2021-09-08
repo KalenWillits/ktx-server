@@ -9,7 +9,6 @@ from models import ModelManager
 
 MODELS = ModelManager([Account, Asset, AuthorizationToken, Group, Permission, RegistrationKey, Status, User])
 
-TASKS = TaskManager([CreateAdminGroup("startup"), CreatePermissions("startup"), PeriodicDatabaseSave("loop"),
-                     PurgeExpiredTokens("loop")])
+TASKS = TaskManager([CreateAdminGroup, CreatePermissions, PeriodicDatabaseSave, PurgeExpiredTokens])
 
-ACTIONS = ActionManager([Login("login"), CreateAdminRegKey("admin_reg_key")])
+ACTIONS = ActionManager([Login, CreateAdminRegKey])

@@ -1,8 +1,7 @@
-from actions.actions import Action
+from actions import Action
 from apps.models.account import Account
 from apps.models.authorization_token import AuthorizationToken
-from models.utils import encrypt
-from models.utils import hydrate
+from utils import hydrate, encrypt
 
 class Login(Action):
     key = "login"

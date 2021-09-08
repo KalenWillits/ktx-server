@@ -1,11 +1,11 @@
 from tasks import Task
-from register import MODELS
 from utils import to_snake
 
 class CreatePermissions(Task):
     type = "startup"
 
     def run(*args, **kwargs):
+        MODELS = kwargs.get("MODELS")
         db = kwargs.get("db")
         permission_types = ('create', 'read', 'update', 'delete')
         for model in MODELS:

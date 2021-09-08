@@ -1,5 +1,5 @@
 import inspect
-from models.utils import to_snake
+from .to_snake import to_snake
 
 
 def hydrate(model, df, db):

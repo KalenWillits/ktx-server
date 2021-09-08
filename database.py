@@ -1,12 +1,12 @@
 import pandas as pd
 from typing import get_type_hints
 import numpy as np
-from config.settings import settings
+import settings
 import pytz
 import os
 from utils import is_datetime, is_numeric, file_to_string, string_to_file, to_snake
 from register import MODELS
-from apps.assets.utils import Asset
+from apps.models.asset import Asset
 
 pd.options.mode.chained_assignment = None  # default='warn'
 server_name = 'db'
