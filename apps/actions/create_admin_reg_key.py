@@ -1,9 +1,11 @@
-from apps.accounts.models import RegistrationKey, Permission
-from database.database import db
-from commands.commands import Command
+from apps.models import RegistrationKey
+from actions import Action
 
-class CreateAdminRegKey(Command):
-    def execute(self, *args, **kwargs):
+class CreateAdminRegKey(Action):
+    key = "create-admin-reg-key"
+
+    def execute(*args, **kwargs):
+        db = kwargs.get("db")
         if db.has('permission'):
             admin_group_df = db.filter('group', title='Admin')
             if not admin_group_df.empty:
@@ -16,5 +18,3 @@ class CreateAdminRegKey(Command):
             raise Exception('No table [group].')
         raise Exception('No table [permission].')
 
-
-commands = [CreateAdminRegKey()]

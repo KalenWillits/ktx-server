@@ -5,7 +5,9 @@ from models.utils import encrypt
 from models.utils import hydrate
 
 class Login(Action):
-    def run(*args, **kwargs):
+    key = "login"
+
+    def execute(*args, **kwargs):
         websocket = kwargs.get("websocket")
         server = kwargs.get("server")
         db = kwargs.get("db")

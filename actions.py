@@ -1,15 +1,12 @@
-from models.utils import to_snake
-
 
 class Action:
-    def __init__(self, key: str = None):
-        self.key = key
+    key = None
 
-    def run(self, *args, **kwargs):
+    def execute(*args, **kwargs):
         """
         Overwrite this method to create a custom action.
         """
-        raise Exception(f"[{self.key}] - Action - Run Method not implimented.")
+        raise Exception("Action - Execute method not implimented.")
 
 
 class ActionManager:

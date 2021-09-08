@@ -2,7 +2,7 @@ from models import Model
 from .group import Group
 from .permission import Permission
 from random import choice
-from config.settings import settings
+import settings
 
 class RegistrationKey(Model):
     key: str = ''

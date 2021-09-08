@@ -1,4 +1,5 @@
+from .create_admin_reg_key import CreateAdminRegKey
 from .login import Login
+from actions import ActionManager
 
-
-actions = [Login('login')]
+ACTIONS = ActionManager([CreateAdminRegKey, Login])

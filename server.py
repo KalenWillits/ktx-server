@@ -2,19 +2,14 @@ import asyncio
 import json
 import websockets
 import argparse
-from websockets.exceptions import ConnectionClosedError
-from database.database import db
-from actions.actions import ActionManager
-from apps.actions import actions
-from tasks.tasks import TaskManager
-from tasks.register import tasks
-from models.register import models
-from models.models import Model
-from utils import get_snapshot, hydrate
 
-TASKS = TaskManager(tasks)
-ACTIONS = ActionManager(actions)
-db.load()
+from websockets.exceptions import ConnectionClosedError
+
+from database.database import db
+from apps.actions import ACTIONS
+from tasks import TASKS
+from models import MODELS, Model
+from utils import get_snapshot
 
 
 class Server:
@@ -61,7 +56,7 @@ class Server:
     def run_shell(self):
         from IPython import embed
 
-        for model in models:
+        for model in MODELS:
             exec(f'from {model.__module__} import {model.__name__}', globals())
 
         from utils import file_to_string, string_to_file
@@ -98,9 +93,8 @@ class Server:
             await websocket.send(self.state_event(websocket))
             async for payload in websocket:
                 data = json.loads(payload)
-                print(data)
                 for action_name in data.keys():
-                    if response := ACTIONS[action_name].run(
+                    if response := ACTIONS[action_name].execute(
                         websocket=websocket,
                         server=self,
                         db=db,
@@ -115,6 +109,7 @@ class Server:
             await self.unregister(websocket)
 
     def run(self):
+        db.load()
         parser = argparse.ArgumentParser()
         parser.add_argument('cmd')
         parser.add_argument('-p', '--port', default=self.port)

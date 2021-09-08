@@ -1,18 +1,17 @@
 class Task:
-    def __init__(self, type):
-        self.type = type
+    type = None
 
-    def run(self):
+    def execute(*args, **kwargs):
         '''
         Overwrite this method to create custom tasks.
         Tasks in startup and shutdown are syncronous tasks,
         tasks in loop are asyncronous.
         '''
-        raise Exception(f"[{self.__name__}] - Task - Run method not implimented")
+        raise Exception("Task - execute method not implimented")
 
 
 class TaskManager:
-    def __init__(self, type: str = "", tasks: list = list()):
+    def __init__(self, tasks: list = list()):
         self.startup_queue = list()
         self.loop_queue = list()
         self.shutdown_queue = list()
@@ -20,22 +19,22 @@ class TaskManager:
         for task in tasks:
             if task.type == 'startup':
                 self.startup_queue.append(task)
-            elif task.type == 'loop':
+            elif task.type == 'periodic':
                 self.loop_queue.append(task)
             elif task.type == 'shutdown':
                 self.shutdown_queue.append(task)
             else:
                 raise Exception(f'{task.type} is an invalid task type. task type is required.')
 
-    def run_startup_tasks(self):
+    def execute_startup_tasks(self):
         for task in self.startup_queue:
-            task.run()
+            task.execute()
 
-    async def run_loop_tasks(self):
+    async def execute_periodic_tasks(self):
         while True:
             for task in self.loop_queue:
-                await task.run()
+                await task.execute()
 
-    def run_shutdown_tasks(self):
+    def execute_shutdown_tasks(self):
         for task in self.shutdown_queue:
-            task.run()
+            task.execute()

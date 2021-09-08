@@ -1,4 +1,5 @@
-from models.models import Model
+from models import Model
+
 
 class Asset(Model):
     file: str = ''

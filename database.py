@@ -1,13 +1,11 @@
 import pandas as pd
-# import pickle
 from typing import get_type_hints
 import numpy as np
 from config.settings import settings
 import pytz
 import os
-from database.utils import is_datetime, is_numeric, file_to_string, string_to_file
-from models.utils import to_snake
-from models.register import models
+from utils import is_datetime, is_numeric, file_to_string, string_to_file, to_snake
+from register import MODELS
 from apps.assets.utils import Asset
 
 pd.options.mode.chained_assignment = None  # default='warn'
@@ -213,7 +211,7 @@ class Database:
             return self[table_name].iloc[0:0]
 
     def init_schema(self):
-        for model in models:
+        for model in MODELS:
             if name := to_snake((model.__name__)):
                 if not self.has(name):
                     empty_df = model().df().iloc[0:0]
@@ -223,7 +221,7 @@ class Database:
         '''
         Changes lists and sets from strings back into lists and sets on load.
         '''
-        for model in models:
+        for model in MODELS:
             if name := to_snake((model.__name__)):
                 if self.has(name):
                     dtypes = get_type_hints(model)
@@ -248,7 +246,7 @@ class Database:
                                 self[name][field].astype(dtype)
 
     def save(self):
-        for model in models:
+        for model in MODELS:
             if name := to_snake((model.__name__)):
                 if issubclass(model, Asset):
                     for file, file_name in zip(self[name]['file'].values, self[name]['file_name']):
@@ -262,7 +260,7 @@ class Database:
 
     def load(self):
         self.init_schema()
-        for model in models:
+        for model in MODELS:
             if name := to_snake((model.__name__)):
                 if os.path.isfile(os.path.join(settings.data_path, f'{name}.csv')):
                     self[name] = pd.read_csv(os.path.join(settings.data_path, f'{name}.csv'))

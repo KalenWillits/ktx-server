@@ -1,6 +1,6 @@
-import pandas as pd
 import inspect
-from models.utils import to_snake, Schema
+import pandas as pd
+from utils import to_snake, Schema
 
 
 class Model:
@@ -54,3 +54,19 @@ class Model:
 
     def on_delete(self, db):
         return self.df()
+
+    def __repr__(self):
+        return self.df().to_string()
+
+class ModelManager:
+    def __init__(self, models: list):
+        self.__models__ = models
+        for model in models:
+            self.__dict__[model.__class__.__name__] = model
+
+    def __iter__(self):
+        for model in self.__models__:
+            yield model
+
+    def __getitem__(self, index: int):
+        return self.__models__[index]
