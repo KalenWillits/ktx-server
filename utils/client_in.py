@@ -15,7 +15,9 @@ class ClientIn:
         self.data = dict()
         self.previous_data = None
         self.commands = {
-            "!login": {"login": {"username": "test", "password": "pass"}}
+            "!login": {"login": {"username": "development", "password": "pass"}},
+            "!register": {"register": {"username": "development", "password": "pass", "key": "ZKXLDPT8Y"}},
+            "!create-admin-reg-key": {"create-admin-reg-key": {}}
         }
 
     async def handle_input(self, websocket, middle_code):

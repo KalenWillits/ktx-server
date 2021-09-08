@@ -58,8 +58,7 @@ class Server:
         for model in MODELS:
             exec(f'from {model.__module__} import {model.__name__}', globals())
 
-        from utils import file_to_string, string_to_file
-        from utils import hydrate
+        import utils
 
         return lambda: embed()
 
@@ -86,7 +85,6 @@ class Server:
         del self.clients[websocket]
 
     async def handle(self, websocket, address):
-        self.log("[STARTING]", self.address)
         await self.register(websocket)
         try:
             await websocket.send(self.state_event(websocket))
@@ -108,7 +106,7 @@ class Server:
             await self.unregister(websocket)
 
     def run(self):
-        db.load()
+
         parser = argparse.ArgumentParser()
         parser.add_argument('cmd')
         parser.add_argument('-p', '--port', default=self.port)
@@ -124,11 +122,18 @@ class Server:
 
         elif init_function := self.commands.get(args.cmd):
             try:
+                self.log("[STARTING]", self.address)
+                db.load()
+                TASKS.execute_startup_tasks(db=db, MODELS=MODELS, server=self)
+
                 asyncio.get_event_loop().run_until_complete(init_function())
+                asyncio.get_event_loop().run_until_complete(TASKS.execute_periodic_tasks(db=db, models=MODELS,
+                                                                                         server=self))
                 asyncio.get_event_loop().run_forever()
             except KeyboardInterrupt:
                 self.log("[SHUTDOWN]")
             finally:
+                TASKS.execute_shutdown_tasks(db=db, MODELS=MODELS, server=self)
                 db.save()
         else:
             self.log(f"[ERROR] -- {args.cmd} is not a valid option.")

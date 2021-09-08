@@ -13,8 +13,7 @@ class CreateAdminRegKey(Action):
                 reg_key = RegistrationKey(groups={admin_group_pk})
                 df = db.add(reg_key)
                 print(f'Registration Key: {df.iloc[0].key}')
-                db.save()
-                return
+                return {"key": reg_key.key}
             raise Exception('No table [group].')
         raise Exception('No table [permission].')
 

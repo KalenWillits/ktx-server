@@ -26,15 +26,15 @@ class TaskManager:
             else:
                 raise Exception(f'{task.type} is an invalid task type. task type is required.')
 
-    def execute_startup_tasks(self):
+    def execute_startup_tasks(self, **kwargs):
         for task in self.startup_queue:
-            task.execute()
+            task.execute(**kwargs)
 
-    async def execute_periodic_tasks(self):
+    async def execute_periodic_tasks(self, **kwargs):
         while True:
             for task in self.loop_queue:
-                await task.execute()
+                await task.execute(**kwargs)
 
-    def execute_shutdown_tasks(self):
+    def execute_shutdown_tasks(self, **kwargs):
         for task in self.shutdown_queue:
-            task.execute()
+            task.execute(**kwargs)
