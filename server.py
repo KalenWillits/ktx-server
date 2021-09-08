@@ -10,7 +10,7 @@ from tasks.tasks import TaskManager
 from tasks.register import tasks
 from models.register import models
 from models.models import Model
-from utils.get_snapshot import get_snapshot
+from utils import get_snapshot, hydrate
 
 TASKS = TaskManager(tasks)
 ACTIONS = ActionManager(actions)
@@ -64,8 +64,8 @@ class Server:
         for model in models:
             exec(f'from {model.__module__} import {model.__name__}', globals())
 
-        from database.utils import file_to_string, string_to_file
-        from models.utils import hydrate
+        from utils import file_to_string, string_to_file
+        from utils import hydrate
 
         return lambda: embed()
 
