@@ -16,7 +16,7 @@ class ClientIn:
         self.previous_data = None
         self.commands = {
             "!login": {"login": {"username": "development", "password": "pass"}},
-            "!register": {"register": {"username": "development", "password": "pass", "key": "ZKXLDPT8Y"}},
+            "!register": {"register": {"username": "development2", "password": "pass", "key": "MZBQOV0SA"}},
             "!create-admin-reg-key": {"create-admin-reg-key": {}}
         }
 

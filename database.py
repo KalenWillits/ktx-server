@@ -271,6 +271,7 @@ class Database:
         self.audit_iter_types()
 
 
+global db
 db = Database()
 
 def write_database_to_disk():

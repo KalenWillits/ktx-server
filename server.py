@@ -17,6 +17,10 @@ class Server:
         address: str = "localhost",
         port: int = 5000,
         debug: bool = True,
+        db=None,
+        tasks=None,
+        models=None,
+        actions=None,
     ):
         self.address = address
         self.port = port
@@ -29,6 +33,10 @@ class Server:
             "client-in": self.run_client_in(),
             "client-out": self.run_client_out(),
         }
+        self.db = db
+        self.tasks = tasks
+        self.models = models
+        self.actions = actions
 
     def log(self, *args):
         if self.debug:
@@ -81,7 +89,7 @@ class Server:
         self.clients[websocket][model] = pks
 
     async def unregister(self, websocket):
-        self.log(["UNREGISTER"])
+        self.log("[UNREGISTER]")
         del self.clients[websocket]
 
     async def handle(self, websocket, address):
@@ -133,7 +141,9 @@ class Server:
             except KeyboardInterrupt:
                 self.log("[SHUTDOWN]")
             finally:
+                self.log("[CLEANUP-TASKS-STARTED]")
                 TASKS.execute_shutdown_tasks(db=db, MODELS=MODELS, server=self)
                 db.save()
+                self.log("[CLEANUP-TASKS-COMPLETE]")
         else:
             self.log(f"[ERROR] -- {args.cmd} is not a valid option.")

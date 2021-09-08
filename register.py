@@ -1,6 +1,6 @@
 from apps.models import Account, Asset, AuthorizationToken, Group, Permission, RegistrationKey, Status, User
 from apps.tasks import CreateAdminGroup, CreatePermissions, PeriodicDatabaseSave, PurgeExpiredTokens
-from apps.actions import CreateAdminRegKey, Login
+from apps.actions import CreateAdminRegKey, Login, Register
 
 from tasks import TaskManager
 from actions import ActionManager
@@ -11,4 +11,4 @@ MODELS = ModelManager([Account, Asset, AuthorizationToken, Group, Permission, Re
 
 TASKS = TaskManager([CreateAdminGroup, CreatePermissions, PeriodicDatabaseSave, PurgeExpiredTokens])
 
-ACTIONS = ActionManager([Login, CreateAdminRegKey])
+ACTIONS = ActionManager([Login, CreateAdminRegKey, Register])
