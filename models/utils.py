@@ -3,6 +3,8 @@ import inspect
 import re
 from config.settings import settings
 import hashlib
+
+
 def to_snake(name_string):
     '''
     Converts a string in title case to snake case.
@@ -11,42 +13,47 @@ def to_snake(name_string):
     snake_case = '_'.join((f'{w.lower()}' for w in word_list))
     return snake_case
 
+
 def hydrate(model, df, db):
     'Takes the Pandas DataFrame values and generates model instances.'
     for i in range(df.shape[0]):
-        kwargs = df.iloc[i].to_dict()
+        result = df.iloc[i].to_dict()
 
         for field, dtype, default_value in model().schema.items():
             if '__' in field:
                 continue
+            if dtype is set:
+                result[field] = list()
+
             if inspect.isclass(default_value):
                 if db.has(to_snake(default_value.__name__)):
                     foreign_key_df = db.__dict__[to_snake(default_value.__name__)]
-                    if key := kwargs.get(field):
+                    if key := result.get(field):
                         foreign_keys = [key]
                     else:
                         foreign_keys = list()
                     foreign_key_df_filtered = foreign_key_df[foreign_key_df.pk.isin(foreign_keys)]
                     if not foreign_key_df_filtered.empty:
-                        kwargs[field] = next(hydrate(default_value, foreign_key_df_filtered, db))
+                        result[field] = next(hydrate(default_value, foreign_key_df_filtered, db))
 
             elif isinstance(default_value, (list, set)):
                 default_value = next(iter(default_value))
                 if db.has(to_snake(default_value.__name__)):
-                    foreign_key_df = db.__dict__[to_snake(default_value.__name__)]
-                    foreign_keys = kwargs.get(field, list())
+                    foreign_key_df = db[to_snake(default_value.__name__)]
+                    foreign_keys = result.get(field, list())
                     foreign_key_df_filtered = foreign_key_df[foreign_key_df.pk.isin(foreign_keys)]
                     if not foreign_key_df_filtered.empty:
-                        kwargs[field] = hydrate(default_value, foreign_key_df_filtered, db)
+                        result[field] = hydrate(default_value, foreign_key_df_filtered, db)
+                    else:
+                        result[field] = list()
 
             elif isinstance(default_value, bool):
-                if kwargs[field]:
-                    kwargs[field] = True
+                if result[field]:
+                    result[field] = True
                 else:
-                    kwargs[field] = False
+                    result[field] = False
 
-        instance = model(**kwargs)
-        yield instance
+        yield result
 
 
 def encrypt(string):

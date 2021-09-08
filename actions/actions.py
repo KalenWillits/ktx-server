@@ -1,5 +1,6 @@
 from models.utils import to_snake
 
+
 class Action:
     def __init__(self, key: str = None):
         self.key = key

@@ -11,7 +11,6 @@ from tasks.register import tasks
 from models.register import models
 from models.models import Model
 from utils.get_snapshot import get_snapshot
-from utils import serialize_response
 
 TASKS = TaskManager(tasks)
 ACTIONS = ActionManager(actions)
@@ -77,7 +76,7 @@ class Server:
     async def notify_state(self, response):
         self.log("[NOTIFY STATE]")
         if self.clients:  # asyncio.wait doesn't accept an empty list
-            payload = serialize_response(response)
+            payload = json.dumps(response)
             for client in self.clients.keys():
                 await client.send(payload)
 

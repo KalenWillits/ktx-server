@@ -130,3 +130,6 @@ dmypy.json
 
 # Vim
 *.sw*
+
+data/*.csv
+config/.salt
