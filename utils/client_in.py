@@ -8,6 +8,10 @@ import json
 # localhost_pem = pathlib.Path(__file__).with_name("localhost.pem")
 # ssl_context.load_verify_locations(localhost_pem)
 
+def echo():
+    content = input("content: ")
+    return {"echo": {"content": content}}
+
 class ClientIn:
     def __init__(self, uri="ws://localhost:5000"):
         self.uri = uri
@@ -15,9 +19,11 @@ class ClientIn:
         self.data = dict()
         self.previous_data = None
         self.commands = {
-            "!login": {"login": {"username": "development", "password": "pass"}},
-            "!register": {"register": {"username": "development2", "password": "pass", "key": "MZBQOV0SA"}},
-            "!create-admin-reg-key": {"create-admin-reg-key": {}}
+            "!login": lambda: {"login": {"username": "development", "password": "pass"}},
+            "!register": {"register": lambda: {"username": "development2", "password": "pass", "key": "MZBQOV0SA"}},
+            "!create-admin-reg-key": lambda: {"create-admin-reg-key": {}},
+            "!subscribe": lambda: {"subscribe": {"chat": {}}},
+            "!echo": echo,
         }
 
     async def handle_input(self, websocket, middle_code):
@@ -27,7 +33,7 @@ class ClientIn:
 
     async def parse_io(self, websocket):
         if self.commands.get(self.cmd):
-            self.data = self.commands[self.cmd]
+            self.data = self.commands[self.cmd]()
         await websocket.send(json.dumps(self.data))
 
     async def connect(self):
