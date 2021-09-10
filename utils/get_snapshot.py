@@ -10,6 +10,5 @@ def get_snapshot(subscription, db):
     for model, pks in subscription.items():
         df = db[model].isin({"pk": pks})
         snapshot[model] = hydrate(model, df, db)
-
     return snapshot
 

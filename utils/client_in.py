@@ -8,13 +8,16 @@ import json
 # localhost_pem = pathlib.Path(__file__).with_name("localhost.pem")
 # ssl_context.load_verify_locations(localhost_pem)
 
+HEADER = "I-AM-A-HEADER"
+
 def echo():
     content = input("content: ")
     return {"echo": {"content": content}}
 
 class ClientIn:
-    def __init__(self, uri="ws://localhost:5000"):
-        self.uri = uri
+    def __init__(self, address="localhost", port=5000):
+        self.port = port
+        self.address = address
         self.cmd = None
         self.data = dict()
         self.previous_data = None
@@ -41,6 +44,9 @@ class ClientIn:
             await self.handle_input(websocket, self.parse_io)
 
     async def run(self):
+        username = input("username: ")
+        password = input("password: ")
+        self.uri = f"ws://{username}:{password}@{self.address}:{self.port}"
         loop = asyncio.get_event_loop()
         loop.run_until_complete(await self.connect())
         loop.run_forever()

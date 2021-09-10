@@ -7,8 +7,7 @@ from websockets.exceptions import ConnectionClosedError
 
 from database import db
 from register import ACTIONS, MODELS, TASKS
-from models import Model
-from utils import get_snapshot
+from utils import get_snapshot, encrypt
 
 
 class Server:
@@ -42,6 +41,15 @@ class Server:
         if self.debug:
             print(*args)
 
+    async def check_credentials(self, username, password) -> bool:
+        user_df = db.filter('user', username=username, password=encrypt(password))
+        if not user_df.empty:
+            user_pk = user_df.pk.iloc[0]
+            account_df = db.filter('account', user=user_pk)
+            if not account_df.empty:
+                return True
+        return False
+
     def run_client_in(self):
         from utils.client_in import ClientIn
         client = ClientIn()
@@ -58,7 +66,13 @@ class Server:
     def run_dev(self):
         self.log("[DEVELOPMENT MODE]")
         self.debug = True
-        return lambda: websockets.serve(self.handle, "localhost", self.port)
+        return lambda: websockets.serve(
+            self.handle,
+            "localhost",
+            self.port,
+            create_protocol=websockets.basic_auth_protocol_factory(
+                realm="leviathan",
+                check_credentials=self.check_credentials))
 
     def run_shell(self):
         from IPython import embed
@@ -71,12 +85,13 @@ class Server:
         return lambda: embed()
 
     def state_event(self, websocket):
+        self.log("[NOTIFY EVENT]")
         snapshot = get_snapshot(self.clients[websocket], db)
         return json.dumps(snapshot)
 
     async def notify_state(self, response):
         self.log("[NOTIFY STATE]")
-        if self.clients:  # asyncio.wait doesn't accept an empty list
+        if self.clients:
             payload = json.dumps(response)
             for client in self.clients.keys():
                 await client.send(payload)
@@ -84,9 +99,6 @@ class Server:
     async def register(self, websocket):
         self.log("[REGISTER]")
         self.clients[websocket] = dict()
-
-    def subscribe(self, websocket, model: Model = None, pks: set = set()):
-        self.clients[websocket][model] = pks
 
     async def unregister(self, websocket):
         self.log("[UNREGISTER]")
