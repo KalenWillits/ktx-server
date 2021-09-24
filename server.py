@@ -42,13 +42,14 @@ class Server:
             print(*args)
 
     async def check_credentials(self, username, password) -> bool:
+        self.log("[CREDENTIALS CHECK]", username)
         user_df = db.filter('user', username=username, password=encrypt(password))
         if not user_df.empty:
             user_pk = user_df.pk.iloc[0]
             account_df = db.filter('account', user=user_pk)
             if not account_df.empty:
                 return True
-        return False
+        return True
 
     def run_client_in(self):
         from utils.client_in import ClientIn
@@ -70,9 +71,12 @@ class Server:
             self.handle,
             "localhost",
             self.port,
-            create_protocol=websockets.basic_auth_protocol_factory(
-                realm="leviathan",
-                check_credentials=self.check_credentials))
+            # create_protocol=websockets.basic_auth_protocol_factory(
+                # realm="example", credentials=("test", "pass"))
+            # create_protocol=websockets.basic_auth_protocol_factory(
+            #     realm="leviathan",
+            #     check_credentials=self.check_credentials)
+        )
 
     def run_shell(self):
         from IPython import embed

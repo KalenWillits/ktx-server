@@ -8,7 +8,6 @@ import json
 # localhost_pem = pathlib.Path(__file__).with_name("localhost.pem")
 # ssl_context.load_verify_locations(localhost_pem)
 
-HEADER = "I-AM-A-HEADER"
 
 def echo():
     content = input("content: ")
