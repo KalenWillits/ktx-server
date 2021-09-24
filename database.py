@@ -80,7 +80,7 @@ class Database:
         '''
 
         if skip_on_create:
-            df = instance._df()
+            df = instance._to_df()
         else:
             df = instance._on_create(self)
 
@@ -213,7 +213,7 @@ class Database:
         for model in self.models:
             if name := to_snake((model.__name__)):
                 if not self.has(name):
-                    empty_df = model()._df().iloc[0:0]
+                    empty_df = model()._to_df().iloc[0:0]
                     self[name] = empty_df
 
     def audit_iter_types(self):

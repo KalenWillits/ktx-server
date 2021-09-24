@@ -25,7 +25,7 @@ class Model:
     def _as_response(self, df, db):
         return hydrate(self.__class__, df, db)
 
-    def _dict(self) -> dict:
+    def _to_dict(self) -> dict:
         fields_dict = dict()
         for field, dtype, default_value in self._schema.items():
             if inspect.isclass(default_value):
@@ -45,26 +45,26 @@ class Model:
 
         return fields_dict
 
-    def _df(self) -> pd.DataFrame:
-        df = pd.DataFrame([self._dict()])
+    def _to_df(self) -> pd.DataFrame:
+        df = pd.DataFrame([self._to_dict()])
         return df
 
     def _on_read(self, db):
-        return self._df()
+        return self._to_df()
 
     def _on_create(self, db):
         table_name = to_snake(self.__class__.__name__)
         self.pk = db.new_pk(table_name)
-        return self._df()
+        return self._to_df()
 
     def _on_change(self, db):
-        return self._df()
+        return self._to_df()
 
     def _on_delete(self, db):
-        return self._df()
+        return self._to_df()
 
     def __repr__(self):
-        return self._df().to_string()
+        return self._to_df().to_string()
 
 class ModelManager:
     def __init__(self, models: list):
