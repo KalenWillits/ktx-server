@@ -68,7 +68,7 @@ class Database:
         This is a "Pandas Table".
         '''
 
-        df = instance.on_create(self)
+        df = instance._on_create(self)
         instance = instance.__class__(**df.iloc[0].to_dict())
         table_name = to_snake(instance.__class__.__name__)
         if not self.has(table_name):
@@ -80,9 +80,9 @@ class Database:
         '''
 
         if skip_on_create:
-            df = instance.df()
+            df = instance._df()
         else:
-            df = instance.on_create(self)
+            df = instance._on_create(self)
 
         instance = instance.__class__(**df.iloc[0].to_dict())
         table_name = to_snake(instance.__class__.__name__)
@@ -161,13 +161,13 @@ class Database:
             return None
 
     def query(self, instance, **kwargs):
-        instance.on_read(self)
+        instance._on_read(self)
         table_name = to_snake(instance.__class__.__name__)
         return self.filter(table_name, **kwargs)
 
     def change(self, instance, **kwargs):
         table_name = to_snake(instance.__class__.__name__)
-        df = instance.on_change(self)
+        df = instance._on_change(self)
         instance = instance.__class__(**df.iloc[0].to_dict())
         operator = None
 
@@ -213,7 +213,7 @@ class Database:
         for model in self.models:
             if name := to_snake((model.__name__)):
                 if not self.has(name):
-                    empty_df = model().df().iloc[0:0]
+                    empty_df = model()._df().iloc[0:0]
                     self[name] = empty_df
 
     def audit_iter_types(self):

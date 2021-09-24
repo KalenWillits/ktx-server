@@ -5,12 +5,11 @@ class Schema:
     def __init__(self, instance):
         self.instance = instance
         self.values = dict()
-        self._exempt_methods = ('schema', 'on_read', 'on_create', 'on_change', 'on_delete', 'df', 'snake_name')
 
         for attribute in dir(self.instance):
             if '__' in attribute:
                 continue
-            if attribute in self._exempt_methods:
+            if attribute[0] == '_':
                 continue
 
             if inspect.isclass(getattr(self.instance.__class__, attribute)):
@@ -29,7 +28,7 @@ class Schema:
         return self.dtypes()[key]
 
     def __repr__(self):
-        return f'{self.instance.__class__.__name__}.schema({self.dtypes()})'
+        return f'{self.instance.__class__.__name__}._schema({self.dtypes()})'
 
     def __str__(self):
         return str(self.dtypes())
@@ -39,7 +38,7 @@ class Schema:
         for attribute_name in dir(self.instance):
             if '__' in attribute_name:
                 continue
-            if attribute_name in self._exempt_methods:
+            if attribute_name[0] == '_':
                 continue
 
             attribute_value = getattr(self.instance.__class__, attribute_name)
@@ -66,6 +65,6 @@ class Schema:
         for attribute in dir(self.instance):
             if '__' in attribute:
                 continue
-            if attribute in self._exempt_methods:
+            if attribute[0] == '_':
                 continue
             yield attribute, dtypes.get(attribute), getattr(self.instance.__class__, attribute)

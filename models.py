@@ -7,13 +7,13 @@ class Model:
     pk: int = 0
 
     def __init__(self, *args, **kwargs):
-        self.schema = Schema(self)
-        self.__dict__.update(self.schema.values)
+        self._schema = Schema(self)
+        self.__dict__.update(self._schema.values)
         for key, value in kwargs.items():
             setattr(self, key, value)
 
     @property
-    def snake_name(self) -> str:
+    def _snake_name(self) -> str:
         return to_snake(self.__class__.__name__)
 
     def __setitem__(self, key, value):
@@ -22,9 +22,9 @@ class Model:
     def __getitem__(self, key):
         return self.__dict__[key]
 
-    def df(self):
+    def _df(self):
         fields_dict = dict()
-        for field, dtype, default_value in self.schema.items():
+        for field, dtype, default_value in self._schema.items():
             if inspect.isclass(default_value):
                 default_value = 0
             elif dtype == list:
@@ -34,25 +34,25 @@ class Model:
 
             fields_dict[field] = default_value
         instance_values = self.__dict__
-        del instance_values['schema']
+        del instance_values['_schema']
         fields_dict.update(instance_values)
 
         df = pd.DataFrame([fields_dict])
 
         return df
 
-    def on_read(self, db):
+    def _on_read(self, db):
         return self.df()
 
-    def on_create(self, db):
+    def _on_create(self, db):
         table_name = to_snake(self.__class__.__name__)
         self.pk = db.new_pk(table_name)
         return self.df()
 
-    def on_change(self, db):
+    def _on_change(self, db):
         return self.df()
 
-    def on_delete(self, db):
+    def _on_delete(self, db):
         return self.df()
 
     def __repr__(self):
