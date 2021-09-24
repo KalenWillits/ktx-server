@@ -11,10 +11,7 @@ from .utils import get_snapshot
 class Server:
     def __init__(
         self,
-        address: str = "localhost",
-        port: int = 5000,
-        debug: bool = True,
-        db=None,
+        address: str = "localhost", port: int = 5000, debug: bool = True, db=None,
         tasks=None,
         models=None,
         actions=None,
@@ -50,6 +47,15 @@ class Server:
         )
 
     def run_shell(self):
+        global db
+        db = self.db
+        global models
+        models = self.models
+        global actions
+        actions = self.actions
+        global tasks
+        tasks = self.tasks
+
         from IPython import embed
 
         for model in self.models:
@@ -58,23 +64,23 @@ class Server:
         return lambda: embed()
 
     def state_event(self, websocket):
-        self.log("[NOTIFY EVENT]")
+        self.log(f"[NOTIFY EVENT] {websocket.host} -- {websocket.local_address}")
         snapshot = get_snapshot(self.clients[websocket], self.db)
         return json.dumps(snapshot)
 
     async def notify_state(self, response):
-        self.log("[NOTIFY STATE]")
+        self.log(f"[NOTIFY STATE] {response}")
         if self.clients:
             payload = json.dumps(response)
             for client in self.clients.keys():
                 await client.send(payload)
 
     async def register(self, websocket):
-        self.log("[REGISTER]")
+        self.log(f"[REGISTER] {websocket.host} -- {websocket.local_address}")
         self.clients[websocket] = dict()
 
     async def unregister(self, websocket):
-        self.log("[UNREGISTER]")
+        self.log(f"[UNREGISTER] {websocket.host} -- {websocket.local_address}")
         del self.clients[websocket]
 
     async def handle(self, websocket, address):
@@ -93,7 +99,7 @@ class Server:
                         await self.notify_state(response)
 
         except ConnectionClosedError:
-            self.log(f"[CONNECTION ERROR] {websocket.host} -- {websocket.local_address}")
+            self.log(f"[CONNECTION CLOSED] {websocket.host} -- {websocket.local_address}")
 
         finally:
             await self.unregister(websocket)
@@ -115,7 +121,7 @@ class Server:
 
         elif init_function := self.commands.get(args.cmd):
             try:
-                self.log("[STARTING]", self.address)
+                self.log(f"[STARTING] {self.address}:{self.port}")
                 self.db.load()
                 self.tasks.execute_startup_tasks(db=self.db, models=self.models, server=self)
 

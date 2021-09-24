@@ -9,4 +9,3 @@ from .parse_nums import parse_nums
 from .schema import Schema
 from .generate_salt import generate_salt
 from .is_numeric import is_numeric
-from .token_is_valid import token_is_valid

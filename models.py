@@ -1,6 +1,6 @@
 import inspect
 import pandas as pd
-from .utils import to_snake, Schema
+from .utils import to_snake, Schema, hydrate
 
 
 class Model:
@@ -22,7 +22,10 @@ class Model:
     def __getitem__(self, key):
         return self.__dict__[key]
 
-    def _df(self):
+    def _as_response(self, df, db):
+        return hydrate(self.__class__, df, db)
+
+    def _dict(self) -> dict:
         fields_dict = dict()
         for field, dtype, default_value in self._schema.items():
             if inspect.isclass(default_value):
@@ -33,30 +36,35 @@ class Model:
                 default_value = set()
 
             fields_dict[field] = default_value
+
         instance_values = self.__dict__
-        del instance_values['_schema']
-        fields_dict.update(instance_values)
+        for field, value in instance_values.items():
+            if field[0] == "_":
+                continue
+            fields_dict[field] = value
 
-        df = pd.DataFrame([fields_dict])
+        return fields_dict
 
+    def _df(self) -> pd.DataFrame:
+        df = pd.DataFrame([self._dict()])
         return df
 
     def _on_read(self, db):
-        return self.df()
+        return self._df()
 
     def _on_create(self, db):
         table_name = to_snake(self.__class__.__name__)
         self.pk = db.new_pk(table_name)
-        return self.df()
+        return self._df()
 
     def _on_change(self, db):
-        return self.df()
+        return self._df()
 
     def _on_delete(self, db):
-        return self.df()
+        return self._df()
 
     def __repr__(self):
-        return self.df().to_string()
+        return self._df().to_string()
 
 class ModelManager:
     def __init__(self, models: list):

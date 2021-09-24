@@ -7,7 +7,7 @@ def hydrate(model, df, db):
     for i in range(df.shape[0]):
         result = df.iloc[i].to_dict()
 
-        for field, dtype, default_value in model().schema.items():
+        for field, dtype, default_value in model()._schema.items():
             if '__' in field:
                 continue
             if dtype is set:
