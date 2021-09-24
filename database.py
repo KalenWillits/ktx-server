@@ -8,17 +8,17 @@ from utils import is_datetime, is_numeric, file_to_string, string_to_file, to_sn
 from register import MODELS
 from apps.models.asset import Asset
 
-pd.options.mode.chained_assignment = None  # default='warn'
-server_name = 'db'
+pd.options.mode.chained_assignment = None
+
 
 class Database:
-    file = os.path.join('db.pkl')
 
-    def __init__(self):
+    def __init__(self, path=''):
         '''
         Simple in-memory database built with pandas to store data in ram.
         This is a "Pandas Database".
         '''
+        self.path = path
         self.load()
 
     def __setitem__(self, key, value):
@@ -73,7 +73,7 @@ class Database:
         instance = instance.__class__(**df.iloc[0].to_dict())
         table_name = to_snake(instance.__class__.__name__)
         if not self.has(table_name):
-            db[table_name] = df
+            self[table_name] = df
 
     def add(self, instance, skip_on_create=False):
         '''Adds a model instance to the corresponding table.
@@ -262,17 +262,14 @@ class Database:
         self.init_schema()
         for model in MODELS:
             if name := to_snake((model.__name__)):
-                if os.path.isfile(os.path.join(settings.data_path, f'{name}.csv')):
-                    self[name] = pd.read_csv(os.path.join(settings.data_path, f'{name}.csv'))
+                if os.path.isfile(os.path.join(self.path, f'{name}.csv')):
+                    self[name] = pd.read_csv(os.path.join(self.path, f'{name}.csv'))
 
                 if issubclass(model, Asset):
                     self[name]['file'] = self[name]['file_name'].apply(
-                        lambda file_name: file_to_string(os.path.join(settings.assets_path, file_name)))
+                        lambda file_name: file_to_string(os.path.join(self.path, file_name)))
         self.audit_iter_types()
 
 
-global db
-db = Database()
-
-def write_database_to_disk():
-    db.save()
+# global db
+# db = Database()

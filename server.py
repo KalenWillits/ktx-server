@@ -6,7 +6,6 @@ import argparse
 from websockets.exceptions import ConnectionClosedError
 
 from database import db
-from register import ACTIONS, MODELS, TASKS
 from utils import get_snapshot, encrypt
 
 
@@ -17,7 +16,7 @@ class Server:
         port: int = 5000,
         debug: bool = True,
         db=None,
-        tasks=None,
+        self.tasks=None,
         models=None,
         actions=None,
     ):
@@ -33,7 +32,7 @@ class Server:
             "client-out": self.run_client_out(),
         }
         self.db = db
-        self.tasks = tasks
+        self.self.tasks = self.tasks
         self.models = models
         self.actions = actions
 
@@ -50,16 +49,6 @@ class Server:
             if not account_df.empty:
                 return True
         return True
-
-    def run_client_in(self):
-        from utils.client_in import ClientIn
-        client = ClientIn()
-        return lambda: client.run()
-
-    def run_client_out(self):
-        from utils.client_out import ClientOut
-        client = ClientOut()
-        return lambda: client.run()
 
     def run_default(self):
         return lambda: websockets.serve(self.handle, self.address, self.port)
@@ -81,7 +70,7 @@ class Server:
     def run_shell(self):
         from IPython import embed
 
-        for model in MODELS:
+        for model in self.models:
             exec(f'from {model.__module__} import {model.__name__}', globals())
 
         import utils
@@ -115,7 +104,7 @@ class Server:
             async for payload in websocket:
                 data = json.loads(payload)
                 for action_name in data.keys():
-                    if response := ACTIONS[action_name].execute(
+                    if response := self.actions[action_name].execute(
                         websocket=websocket,
                         server=self,
                         db=db,
@@ -148,17 +137,17 @@ class Server:
             try:
                 self.log("[STARTING]", self.address)
                 db.load()
-                TASKS.execute_startup_tasks(db=db, MODELS=MODELS, server=self)
+                TASKS.execute_startup_self.tasks(db=db, self.models=self.models, server=self)
 
                 asyncio.get_event_loop().run_until_complete(init_function())
-                asyncio.get_event_loop().run_until_complete(TASKS.execute_periodic_tasks(db=db, models=MODELS,
+                asyncio.get_event_loop().run_until_complete(TASKS.execute_periodic_self.tasks(db=db, models=self.models,
                                                                                          server=self))
                 asyncio.get_event_loop().run_forever()
             except KeyboardInterrupt:
                 self.log("[SHUTDOWN]")
             finally:
                 self.log("[CLEANUP-TASKS-STARTED]")
-                TASKS.execute_shutdown_tasks(db=db, MODELS=MODELS, server=self)
+                TASKS.execute_shutdown_self.tasks(db=db, self.models=self.models, server=self)
                 db.save()
                 self.log("[CLEANUP-TASKS-COMPLETE]")
         else:
