@@ -15,6 +15,7 @@ class Server:
         tasks=None,
         models=None,
         actions=None,
+        auth=lambda token: True,
     ):
         self.address = address
         self.port = port
@@ -24,6 +25,7 @@ class Server:
         self.tasks = tasks
         self.models = models
         self.actions = actions
+        self.auth = auth
         self.commands = {
             "run": self.run_default(),
             "dev": self.run_dev(),
@@ -94,6 +96,7 @@ class Server:
                         websocket=websocket,
                         server=self,
                         db=self.db,
+                        auth=self.auth,
                         **data.get(action_name)
                     ):
                         await self.notify_state(response)
