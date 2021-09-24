@@ -1,3 +1,5 @@
+import asyncio
+
 class Task:
     type = None
 
@@ -34,6 +36,9 @@ class TaskManager:
         while True:
             for task in self.loop_queue:
                 await task.execute(**kwargs)
+
+            if not self.loop_queue:
+                break
 
     def execute_shutdown_tasks(self, **kwargs):
         for task in self.shutdown_queue:

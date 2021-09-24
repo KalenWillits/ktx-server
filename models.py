@@ -1,6 +1,6 @@
 import inspect
 import pandas as pd
-from utils import to_snake, Schema
+from .utils import to_snake, Schema
 
 
 class Model:

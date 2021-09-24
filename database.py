@@ -1,24 +1,23 @@
 import pandas as pd
 from typing import get_type_hints
 import numpy as np
-import settings
 import pytz
 import os
-from utils import is_datetime, is_numeric, file_to_string, string_to_file, to_snake
-from register import MODELS
-from apps.models.asset import Asset
+from .utils import is_datetime, is_numeric, file_to_string, string_to_file, to_snake
 
 pd.options.mode.chained_assignment = None
 
 
 class Database:
 
-    def __init__(self, path=''):
+    def __init__(self, models=None, path: str = '', asset_models: tuple = ()):
         '''
         Simple in-memory database built with pandas to store data in ram.
         This is a "Pandas Database".
         '''
+        self.models = models
         self.path = path
+        self.asset_models = asset_models
         self.load()
 
     def __setitem__(self, key, value):
@@ -122,7 +121,7 @@ class Database:
                     if is_datetime(value):
                         value = pd.to_datetime(value)
                         if not value.tzinfo:
-                            value = pytz.timezone(settings.server_timezone).localize(value)
+                            value = pytz.timezone('UTC').localize(value)
                         df[column] = pd.to_datetime(df[column])
 
                     if operator == 'f':
@@ -211,7 +210,7 @@ class Database:
             return self[table_name].iloc[0:0]
 
     def init_schema(self):
-        for model in MODELS:
+        for model in self.models:
             if name := to_snake((model.__name__)):
                 if not self.has(name):
                     empty_df = model().df().iloc[0:0]
@@ -221,7 +220,7 @@ class Database:
         '''
         Changes lists and sets from strings back into lists and sets on load.
         '''
-        for model in MODELS:
+        for model in self.models:
             if name := to_snake((model.__name__)):
                 if self.has(name):
                     dtypes = get_type_hints(model)
@@ -246,30 +245,26 @@ class Database:
                                 self[name][field].astype(dtype)
 
     def save(self):
-        for model in MODELS:
+        for model in self.models:
             if name := to_snake((model.__name__)):
-                if issubclass(model, Asset):
+                if issubclass(model, self.asset_models):
                     for file, file_name in zip(self[name]['file'].values, self[name]['file_name']):
-                        string_to_file(file, os.path.join(settings.assets_path, file_name))
+                        string_to_file(file, os.path.join(self.path, file_name))
 
                 if hasattr(self, name):
                     columns = list(self[name].columns)
                     if 'file' in columns:
                         columns.remove('file')
-                    self[name].to_csv(os.path.join(settings.data_path, f'{name}.csv'), columns=columns, index=False)
+                    self[name].to_csv(os.path.join(self.path, f'{name}.csv'), columns=columns, index=False)
 
     def load(self):
         self.init_schema()
-        for model in MODELS:
+        for model in self.models:
             if name := to_snake((model.__name__)):
                 if os.path.isfile(os.path.join(self.path, f'{name}.csv')):
                     self[name] = pd.read_csv(os.path.join(self.path, f'{name}.csv'))
 
-                if issubclass(model, Asset):
+                if issubclass(model, self.asset_models):
                     self[name]['file'] = self[name]['file_name'].apply(
                         lambda file_name: file_to_string(os.path.join(self.path, file_name)))
         self.audit_iter_types()
-
-
-# global db
-# db = Database()

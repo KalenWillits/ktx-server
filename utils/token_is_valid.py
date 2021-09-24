@@ -1,5 +1,4 @@
 import pandas as pd
-import settings
 from datetime import datetime
 import pytz
 
@@ -13,7 +12,7 @@ def token_is_valid(db, token):
         return False
 
     token_expiration = pd.to_datetime(token_df.expiration.iloc[0])
-    now = pytz.timezone(settings.server_timezone).localize(datetime.utcnow())
+    now = pytz.timezone('UTC').localize(datetime.utcnow())
     if token_expiration > now:
         return True
     else:

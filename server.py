@@ -5,8 +5,7 @@ import argparse
 
 from websockets.exceptions import ConnectionClosedError
 
-from database import db
-from utils import get_snapshot, encrypt
+from .utils import get_snapshot
 
 
 class Server:
@@ -16,7 +15,7 @@ class Server:
         port: int = 5000,
         debug: bool = True,
         db=None,
-        self.tasks=None,
+        tasks=None,
         models=None,
         actions=None,
     ):
@@ -24,31 +23,19 @@ class Server:
         self.port = port
         self.debug = debug
         self.clients = dict()
+        self.db = db
+        self.tasks = tasks
+        self.models = models
+        self.actions = actions
         self.commands = {
             "run": self.run_default(),
             "dev": self.run_dev(),
             "shell": self.run_shell(),
-            "client-in": self.run_client_in(),
-            "client-out": self.run_client_out(),
         }
-        self.db = db
-        self.self.tasks = self.tasks
-        self.models = models
-        self.actions = actions
 
     def log(self, *args):
         if self.debug:
             print(*args)
-
-    async def check_credentials(self, username, password) -> bool:
-        self.log("[CREDENTIALS CHECK]", username)
-        user_df = db.filter('user', username=username, password=encrypt(password))
-        if not user_df.empty:
-            user_pk = user_df.pk.iloc[0]
-            account_df = db.filter('account', user=user_pk)
-            if not account_df.empty:
-                return True
-        return True
 
     def run_default(self):
         return lambda: websockets.serve(self.handle, self.address, self.port)
@@ -60,11 +47,6 @@ class Server:
             self.handle,
             "localhost",
             self.port,
-            # create_protocol=websockets.basic_auth_protocol_factory(
-                # realm="example", credentials=("test", "pass"))
-            # create_protocol=websockets.basic_auth_protocol_factory(
-            #     realm="leviathan",
-            #     check_credentials=self.check_credentials)
         )
 
     def run_shell(self):
@@ -73,13 +55,11 @@ class Server:
         for model in self.models:
             exec(f'from {model.__module__} import {model.__name__}', globals())
 
-        import utils
-
         return lambda: embed()
 
     def state_event(self, websocket):
         self.log("[NOTIFY EVENT]")
-        snapshot = get_snapshot(self.clients[websocket], db)
+        snapshot = get_snapshot(self.clients[websocket], self.db)
         return json.dumps(snapshot)
 
     async def notify_state(self, response):
@@ -107,7 +87,7 @@ class Server:
                     if response := self.actions[action_name].execute(
                         websocket=websocket,
                         server=self,
-                        db=db,
+                        db=self.db,
                         **data.get(action_name)
                     ):
                         await self.notify_state(response)
@@ -136,19 +116,20 @@ class Server:
         elif init_function := self.commands.get(args.cmd):
             try:
                 self.log("[STARTING]", self.address)
-                db.load()
-                TASKS.execute_startup_self.tasks(db=db, self.models=self.models, server=self)
+                self.db.load()
+                self.tasks.execute_startup_tasks(db=self.db, models=self.models, server=self)
 
                 asyncio.get_event_loop().run_until_complete(init_function())
-                asyncio.get_event_loop().run_until_complete(TASKS.execute_periodic_self.tasks(db=db, models=self.models,
-                                                                                         server=self))
+                asyncio.get_event_loop().run_until_complete(self.tasks.execute_periodic_tasks(
+                                                            db=self.db, server=self)
+                                                            )
                 asyncio.get_event_loop().run_forever()
             except KeyboardInterrupt:
                 self.log("[SHUTDOWN]")
             finally:
                 self.log("[CLEANUP-TASKS-STARTED]")
-                TASKS.execute_shutdown_self.tasks(db=db, self.models=self.models, server=self)
-                db.save()
+                self.tasks.execute_shutdown_tasks(db=self.db, models=self.models, server=self)
+                self.db.save()
                 self.log("[CLEANUP-TASKS-COMPLETE]")
         else:
             self.log(f"[ERROR] -- {args.cmd} is not a valid option.")
