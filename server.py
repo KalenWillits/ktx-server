@@ -6,7 +6,7 @@ import argparse
 
 from websockets.exceptions import ConnectionClosedError
 
-from .utils import get_snapshot
+from .utils import get_snapshot, encrypt
 
 
 class Server:
@@ -17,7 +17,7 @@ class Server:
         models=None,
         actions=None,
         trust: list = ["*"],
-        handle_auth=lambda token: True,
+        auth=lambda username, password: True,
     ):
         self.host = host
         self.port = port
@@ -27,11 +27,10 @@ class Server:
         self.tasks = tasks
         self.models = models
         self.actions = actions
-        self.handle_auth = handle_auth
+        self.auth = auth
         self.trust = trust
         self.commands = {
             "run": self.run_default(),
-            "dev": self.run_dev(),
             "shell": self.run_shell(),
         }
 
@@ -41,15 +40,6 @@ class Server:
 
     def run_default(self):
         return lambda: websockets.serve(self.handle, self.host, self.port)
-
-    def run_dev(self):
-        self.log("[DEVELOPMENT MODE]")
-        self.debug = True
-        return lambda: websockets.serve(
-            self.handle,
-            "localhost",
-            self.port,
-        )
 
     def run_shell(self):
         global db
@@ -80,6 +70,14 @@ class Server:
         snapshot = get_snapshot(self.clients[websocket], self.db)
         return json.dumps(snapshot)
 
+    def handle_auth(self, websocket) -> bool:
+        username = websocket.request_headers.get("username")
+        password = encrypt(websocket.request_headers.get("password"))
+        if self.auth(username, password):
+            return True
+        else:
+            return False
+
     async def notify_state(self, response):
         self.log(f"[NOTIFY STATE] {response}")
         if self.clients:
@@ -96,7 +94,8 @@ class Server:
         del self.clients[websocket]
 
     async def handle(self, websocket, host):
-        if self.check_if_trusted(websocket):
+        self.log(f"[HANDLE-CONNECTION] {websocket.remote_address}")
+        if self.check_if_trusted(websocket) and self.handle_auth(websocket):
             await self.register(websocket)
             try:
                 await websocket.send(self.state_event(websocket))
@@ -107,7 +106,6 @@ class Server:
                             websocket=websocket,
                             server=self,
                             db=self.db,
-                            auth=self.auth,
                             **data.get(action_name)
                         ):
                             await self.notify_state(response)
@@ -119,7 +117,6 @@ class Server:
                 await self.unregister(websocket)
 
     def run(self):
-
         parser = argparse.ArgumentParser()
         parser.add_argument('cmd')
         parser.add_argument('--port', default=self.port)
