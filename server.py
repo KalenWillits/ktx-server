@@ -6,7 +6,7 @@ import argparse
 
 from websockets.exceptions import ConnectionClosedError
 
-from .utils import get_snapshot, encrypt
+from .utils import get_snapshot
 
 
 class Server:
@@ -72,7 +72,7 @@ class Server:
 
     def handle_auth(self, websocket) -> bool:
         username = websocket.request_headers.get("username")
-        password = encrypt(websocket.request_headers.get("password"))
+        password = websocket.request_headers.get("password")
         if self.auth(username, password):
             return True
         else:
