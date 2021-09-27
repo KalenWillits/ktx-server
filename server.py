@@ -67,23 +67,29 @@ class Server:
 
     def state_event(self, websocket):
         self.log(f"[NOTIFY EVENT] {websocket.remote_address}")
-        snapshot = get_snapshot(self.clients[websocket], self.db)
-        return json.dumps(snapshot)
+        payload = get_snapshot(self.clients[websocket], self.db)
+        if payload:
+            return json.dumps(payload)
 
     def handle_auth(self, websocket) -> bool:
         username = websocket.request_headers.get("username")
         password = websocket.request_headers.get("password")
+
         if self.auth(username, password):
+            self.log(f"[ACCESS GRANTED] {websocket.remote_address}")
             return True
+
         else:
+            self.log(f"[ACCESS DENIED] {websocket.remote_address}")
             return False
 
     async def notify_state(self, response):
         self.log(f"[NOTIFY STATE] {response}")
         if self.clients:
             payload = json.dumps(response)
-            for client in self.clients.keys():
-                await client.send(payload)
+            if payload:
+                for client in self.clients.keys():
+                    await client.send(payload)
 
     async def register(self, websocket):
         self.log(f"[REGISTER-NEW-CONNECTION] {websocket.remote_address}")
@@ -98,7 +104,8 @@ class Server:
         if self.check_if_trusted(websocket) and self.handle_auth(websocket):
             await self.register(websocket)
             try:
-                await websocket.send(self.state_event(websocket))
+                if event_payload := self.state_event(websocket):
+                    await websocket.send(event_payload)
                 async for payload in websocket:
                     data = json.loads(payload)
                     for action_name in data.keys():
