@@ -69,9 +69,9 @@ class Server:
         return False
 
     def state_event(self, websocket):
-        self.log(f"[NOTIFY EVENT] {websocket.remote_address}")
         payload = get_snapshot(self.clients[websocket], self.db)
         if payload:
+            self.log(f"[NOTIFY EVENT] {websocket.remote_address}")
             return json.dumps(payload)
 
     def handle_auth(self, websocket) -> bool:
