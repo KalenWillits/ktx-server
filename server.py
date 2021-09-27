@@ -7,17 +7,20 @@ import argparse
 from websockets.exceptions import ConnectionClosedError
 
 from .utils import get_snapshot
+from .models import ModelManager
+from .actions import ActionManager
+from .tasks import TaskManager
 
 
 class Server:
     def __init__(
         self,
         host: str = "localhost", port: int = 5000, debug: bool = True, db=None,
-        tasks=None,
-        models=None,
-        actions=None,
         trust: list = ["*"],
         auth=lambda username, password: True,
+        models: ModelManager = ModelManager([]),
+        actions: ActionManager = ActionManager([]),
+        tasks: TaskManager = TaskManager([]),
     ):
         self.host = host
         self.port = port
