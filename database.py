@@ -155,7 +155,7 @@ class Database:
 
         df = self.filter(to_snake(model.__name__), pk=pk)
         if not df.empty:
-            return model(df.iloc[0].to_dict())
+            return model(**df.iloc[0].to_dict())
 
         return None
 
