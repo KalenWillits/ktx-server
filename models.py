@@ -40,25 +40,11 @@ class Model:
         return hydrate(self.__class__, df, db)
 
     def _to_dict(self) -> dict:
-        fields_dict = dict()
+        instance_values = dict()
         for field, dtype, default_value in self._schema.items():
+            instance_values[field] = self[field]
 
-            if inspect.isclass(default_value):
-                default_value = ""
-            elif dtype == list:
-                default_value = list()
-            elif dtype == set:
-                default_value = set()
-
-            fields_dict[field] = default_value
-
-        instance_values = self.__dict__
-        for field, value in instance_values.items():
-            if field[0] == "_":
-                continue
-            fields_dict[field] = value
-
-        return fields_dict
+        return instance_values
 
     def _to_df(self) -> pd.DataFrame:
         df = pd.DataFrame([self._to_dict()])
