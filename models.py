@@ -33,7 +33,7 @@ class Model:
     def __getitem__(self, key):
         return getattr(self, key)
 
-    def _as_response(self, db, df: pd.DataFrame = None):
+    def _hydrate(self, db, df: pd.DataFrame = None):
         if not df:
             df = self._to_df()
         return hydrate(self.__class__, df, db)
