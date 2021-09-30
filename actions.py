@@ -13,7 +13,7 @@ class ActionManager:
     def __init__(self, actions: list):
         self.actions = dict()
         for action in actions:
-            self.actions[action.key] = action
+            self.actions[action.__name__] = action
 
     def __getitem__(self, key):
         return self.actions[key]
