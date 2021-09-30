@@ -153,7 +153,7 @@ class Database:
         If a model is provided, an instance of the model will be returned instead of a dataframe.
         '''
 
-        df = self.filter(model()._snake_name, pk=pk)
+        df = self.filter(to_snake(model.__name__), pk=pk)
         if not df.empty:
             return model(df.iloc[0].to_dict())
 
