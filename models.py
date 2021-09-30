@@ -17,10 +17,6 @@ class Model:
     def pk(self, value):
         self._pk = str(value)
 
-    @pk.getter
-    def pk(self) -> str:
-        return self._pk
-
     def __init__(self, *args, **kwargs):
         self._schema = Schema(self)
         self.__dict__.update(self._schema.values)
@@ -46,8 +42,11 @@ class Model:
     def _to_dict(self) -> dict:
         fields_dict = dict()
         for field, dtype, default_value in self._schema.items():
+            if isinstance(default_value, property):
+                default_value = self["_" + field]
+
             if inspect.isclass(default_value):
-                default_value = 0
+                default_value = ""
             elif dtype == list:
                 default_value = list()
             elif dtype == set:
