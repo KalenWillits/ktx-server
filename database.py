@@ -159,7 +159,7 @@ class Database:
                 return model(df.iloc[0].to_dict()) if model else df
 
         else:
-            for table_name in df.__dict__.keys():
+            for table_name in self.__dict__.keys():
                 df = self[table_name][self[table_name].pk == pk]
                 if not df.empty:
                     return model(df.iloc[0].to_dict()) if model else df
