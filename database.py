@@ -14,6 +14,9 @@ class Database:
         '''
         Simple in-memory database built with pandas to store data in ram.
         This is a "Pandas Database".
+
+       Asset models is a tuple of models that have a "file" attribute. The file attribute should be a byte string
+       of a file asset. Such as a photo or audio file.
         '''
         self.models = models
         self.path = path
@@ -25,17 +28,6 @@ class Database:
 
     def __getitem__(self, key):
         return self.__dict__[key]
-
-    def new_pk(self, table_name):
-        if self.has(table_name, column='pk'):
-            if not self[table_name].empty:
-                return self.__dict__[table_name].pk.max()+1
-            else:
-                return 1
-        else:
-            return 1
-
-        raise Exception(f'{table_name} does not exist or has no column "pk".')
 
     def has(self, table_name, column=None, value=None):
         if column and value:
@@ -150,16 +142,29 @@ class Database:
         else:
             return pd.DataFrame()
 
-    def get(self, model, pk):
+    def get(self, pk, table_name=None, model=None):
         '''
-        Finds a model instance by pk.
+        Finds a dataframe of a model instance by pk.
+
+        If a table_name is not provided, a loop itereates through all tables checking if the given pk is present.
+        Which is a much slower process. It is recommended to always provide a table name for any process executing
+        at run time.
+
+        If a model is provided, an instance of the model will be returned instead of a dataframe.
         '''
-        table_name = to_snake(model.__name__)
-        df = self.filter(table_name, pk=pk)
-        if not df.empty:
-            return model(**df.iloc[0].to_dict())
+
+        if table_name:
+            df = self.filter(table_name, pk=pk)
+            if not df.empty:
+                return model(df.iloc[0].to_dict()) if model else df
+
         else:
-            return None
+            for table_name in df.__dict__.keys():
+                df = self[table_name][self[table_name].pk == pk]
+                if not df.empty:
+                    return model(df.iloc[0].to_dict()) if model else df
+
+        return None
 
     def query(self, instance, **kwargs):
         instance._on_read(self)

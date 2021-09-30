@@ -1,3 +1,4 @@
+from uuid import UUID
 import inspect
 from typing import get_type_hints
 
@@ -13,7 +14,7 @@ class Schema:
                 continue
 
             if inspect.isclass(getattr(self.instance.__class__, attribute)):
-                self.values[attribute] = 0
+                self.values[attribute] = UUID
             elif isinstance(getattr(self.instance.__class__, attribute), set):
                 self.values[attribute] = set()
             elif isinstance(getattr(self.instance.__class__, attribute), list):

@@ -1,10 +1,19 @@
+from uuid import UUID
 import inspect
 import pandas as pd
 from .utils import to_snake, Schema, hydrate
 
 
 class Model:
-    pk: int = 0
+
+    @property
+    def pk(self) -> UUID:
+        return self._pk
+
+    @pk.setter
+    def pk(self, value):
+        if not hasattr(self, "pk"):
+            self._pk = UUID.uuid4()
 
     def __init__(self, *args, **kwargs):
         self._schema = Schema(self)
@@ -53,8 +62,7 @@ class Model:
         pass
 
     def _on_create(self, db):
-        table_name = to_snake(self.__class__.__name__)
-        self.pk = db.new_pk(table_name)
+        pass
 
     def _on_change(self, db):
         pass
