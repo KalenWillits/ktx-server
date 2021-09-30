@@ -14,7 +14,7 @@ class Schema:
                 continue
 
             if inspect.isclass(getattr(self.instance.__class__, attribute)):
-                self.values[attribute] = dict()
+                self.values[attribute] = None
             elif isinstance(getattr(self.instance.__class__, attribute), set):
                 self.values[attribute] = set()
             elif isinstance(getattr(self.instance.__class__, attribute), list):
