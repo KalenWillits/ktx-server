@@ -1,5 +1,6 @@
 import inspect
 from typing import get_type_hints
+from .dtype_to_default_value import dtype_to_default_value
 
 class Schema:
     def __init__(self, instance):
@@ -67,4 +68,10 @@ class Schema:
                 continue
             if attribute[0] == '_':
                 continue
-            yield attribute, dtypes.get(attribute), getattr(self.instance.__class__, attribute)
+
+            value = getattr(self.instance.__class__, attribute)
+
+            if isinstance(value, property):
+                value = dtype_to_default_value(dtypes.get(attribute))
+
+            yield attribute, dtypes.get(attribute), value

@@ -42,8 +42,6 @@ class Model:
     def _to_dict(self) -> dict:
         fields_dict = dict()
         for field, dtype, default_value in self._schema.items():
-            if isinstance(default_value, property):
-                default_value = self[field]
 
             if inspect.isclass(default_value):
                 default_value = ""
