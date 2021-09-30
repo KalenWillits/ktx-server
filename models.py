@@ -1,4 +1,4 @@
-from uuid import UUID
+from uuid import UUID, uuid4
 import inspect
 import pandas as pd
 from .utils import to_snake, Schema, hydrate
@@ -13,7 +13,7 @@ class Model:
     @pk.setter
     def pk(self, value):
         if not hasattr(self, "pk"):
-            self._pk = UUID.uuid4()
+            self._pk = uuid4()
 
     def __init__(self, *args, **kwargs):
         self._schema = Schema(self)
