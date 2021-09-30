@@ -1,3 +1,4 @@
+from uuid import UUID
 import inspect
 from .to_snake import to_snake
 
@@ -12,6 +13,9 @@ def hydrate(model, df, db):
                 continue
             if dtype is set:
                 result[field] = list()
+
+            if dtype == UUID:
+                import pdb; pdb.set_trace()
 
             if inspect.isclass(default_value):
                 if db.has(to_snake(default_value.__name__)):
