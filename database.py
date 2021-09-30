@@ -142,7 +142,7 @@ class Database:
         else:
             return pd.DataFrame()
 
-    def get(self, pk, table_name=None, model=None):
+    def get(self, model, pk):
         '''
         Finds a dataframe of a model instance by pk.
 
@@ -153,16 +153,9 @@ class Database:
         If a model is provided, an instance of the model will be returned instead of a dataframe.
         '''
 
-        if table_name:
-            df = self.filter(table_name, pk=pk)
-            if not df.empty:
-                return model(df.iloc[0].to_dict()) if model else df
-
-        else:
-            for table_name in self.__dict__.keys():
-                df = self[table_name][self[table_name].pk == pk]
-                if not df.empty:
-                    return model(df.iloc[0].to_dict()) if model else df
+        df = self.filter(model()._snake_name, pk=pk)
+        if not df.empty:
+            return model(df.iloc[0].to_dict())
 
         return None
 
