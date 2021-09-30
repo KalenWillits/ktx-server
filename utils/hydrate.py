@@ -23,6 +23,8 @@ def hydrate(model, df, db):
                     foreign_key_df_filtered = foreign_key_df[foreign_key_df.pk.isin(foreign_keys)]
                     if not foreign_key_df_filtered.empty:
                         result[field] = next(hydrate(default_value, foreign_key_df_filtered, db))
+                    else:
+                        result[field] = None
 
             elif isinstance(default_value, (list, set)):
                 default_value = next(iter(default_value))
