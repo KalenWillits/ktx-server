@@ -1,4 +1,3 @@
-from uuid import UUID
 import inspect
 from .to_snake import to_snake
 

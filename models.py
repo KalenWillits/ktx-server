@@ -1,4 +1,4 @@
-from uuid import UUID, uuid4
+from uuid import uuid4
 import inspect
 import pandas as pd
 from .utils import to_snake, Schema, hydrate
@@ -7,17 +7,17 @@ from .utils import to_snake, Schema, hydrate
 class Model:
 
     @property
-    def pk(self) -> UUID:
-        return self._pk
+    def pk(self) -> str:
+        return str(self._pk)
 
     @pk.setter
     def pk(self, value):
         if not hasattr(self, "pk"):
-            self._pk = uuid4()
+            self._pk = str(uuid4())
 
-    @pk.getter
-    def pk(self) -> str:
-        return str(self._pk)
+    # @pk.getter
+    # def pk(self) -> str:
+    #     return str(self._pk)
 
     def __init__(self, *args, **kwargs):
         self._schema = Schema(self)
@@ -35,7 +35,10 @@ class Model:
     def __getitem__(self, key):
         return self.__dict__[key]
 
-    def _as_response(self, df, db):
+    def _as_response(self, db, values: list = None):
+        df = self._to_df()
+        if values:
+            df = df[values]
         return hydrate(self.__class__, df, db)
 
     def _to_dict(self) -> dict:
