@@ -28,10 +28,10 @@ class Model:
         return to_snake(self.__class__.__name__)
 
     def __setitem__(self, key, value):
-        self.__dict__[key] = value
+        setattr(self, key, value)
 
     def __getitem__(self, key):
-        return self.__dict__[key]
+        return getattr(self, key)
 
     def _as_response(self, db, values: list = None):
         df = self._to_df()
