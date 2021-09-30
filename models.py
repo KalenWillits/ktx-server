@@ -15,9 +15,9 @@ class Model:
         if not hasattr(self, "pk"):
             self._pk = str(uuid4())
 
-    # @pk.getter
-    # def pk(self) -> str:
-    #     return str(self._pk)
+    @pk.getter
+    def pk(self) -> str:
+        return str(self._pk)
 
     def __init__(self, *args, **kwargs):
         self._schema = Schema(self)
