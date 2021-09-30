@@ -14,12 +14,9 @@ def hydrate(model, df, db):
             if dtype is set:
                 result[field] = list()
 
-            if dtype == UUID:
-                import pdb; pdb.set_trace()
-
             if inspect.isclass(default_value):
                 if db.has(to_snake(default_value.__name__)):
-                    foreign_key_df = db.__dict__[to_snake(default_value.__name__)]
+                    foreign_key_df = db[to_snake(default_value.__name__)]
                     if key := result.get(field):
                         foreign_keys = [key]
                     else:

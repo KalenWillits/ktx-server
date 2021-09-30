@@ -15,6 +15,10 @@ class Model:
         if not hasattr(self, "pk"):
             self._pk = uuid4()
 
+    @pk.getter
+    def pk(self) -> str:
+        return str(self._pk)
+
     def __init__(self, *args, **kwargs):
         self._schema = Schema(self)
         self.__dict__.update(self._schema.values)
