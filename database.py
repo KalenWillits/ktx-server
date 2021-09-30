@@ -69,7 +69,7 @@ class Database:
         '''
 
         instance._on_create(self)
-        df = instance._df()
+        df = instance._to_df()
         instance = instance.__class__(**df.iloc[0].to_dict())
         table_name = to_snake(instance.__class__.__name__)
         if not self.has(table_name):
@@ -83,7 +83,7 @@ class Database:
         if not skip_on_create:
             instance._to_df()
 
-        df = instance._df()
+        df = instance._to_df()
 
         instance = instance.__class__(**df.iloc[0].to_dict())
         table_name = to_snake(instance.__class__.__name__)
@@ -169,7 +169,7 @@ class Database:
     def change(self, instance, **kwargs):
         table_name = to_snake(instance.__class__.__name__)
         instance._on_change(self)
-        df = instance._df()
+        df = instance._to_df()
         instance = instance.__class__(**df.iloc[0].to_dict())
         operator = None
 
