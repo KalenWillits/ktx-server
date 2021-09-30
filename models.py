@@ -8,16 +8,14 @@ class Model:
 
     @property
     def pk(self) -> str:
+        if not hasattr(self, "_pk"):
+            self._pk = str(uuid4())
+
         return str(self._pk)
 
     @pk.setter
     def pk(self, value):
-        if not hasattr(self, "_pk"):
-            self._pk = str(uuid4())
-
-    @pk.getter
-    def pk(self) -> str:
-        return str(self._pk)
+        self._pk = value
 
     def __init__(self, *args, **kwargs):
         self._schema = Schema(self)
