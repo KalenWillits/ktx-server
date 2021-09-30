@@ -17,8 +17,7 @@ class Server:
         self,
         host: str = "localhost", port: int = 5000, debug: bool = True, db=None,
         trust: list = ["*"],
-        auth=lambda username, password: True,
-        register=lambda username, password, register: None
+        headers: dict = dict(),
         models: ModelManager = ModelManager([]),
         actions: ActionManager = ActionManager([]),
         tasks: TaskManager = TaskManager([]),
@@ -31,9 +30,8 @@ class Server:
         self.tasks = tasks
         self.models = models
         self.actions = actions
-        self.auth = auth
         self.trust = trust
-        self.ssl = ssl
+        self.headers = headers
         self.commands = {
             "run": self.run_default(),
             "shell": self.run_shell(),
@@ -73,26 +71,19 @@ class Server:
     def state_event(self, websocket):
         payload = get_snapshot(self.clients[websocket], self.db)
         if payload:
-            self.log(f"[NOTIFY EVENT] {websocket.remote_address}")
+            self.log(f"[NOTIFY-EVENT] {websocket.remote_address}")
             return json.dumps(payload)
 
-    def handle_auth(self, websocket) -> bool:
-        username = websocket.request_headers.get("username")
-        password = websocket.request_headers.get("password")
-        key = websocket.request_headers.get("register")
+    def handle_headers(self, websocket_headers) -> bool:
+        for header, function in self.headers.items():
+            delivered_header_value = websocket_headers.get(header)
+            header_function_result = function(delivered_header_value)
 
-        if key:
-            self.log("[REGISTER PROTOCOL]")
-            self.register(username, password, key)
-
-        else:
-            if self.auth(username, password):
-                self.log(f"[ACCESS GRANTED] {websocket.remote_address}")
-                return True
-
-            else:
-                self.log(f"[ACCESS DENIED] {websocket.remote_address}")
+            if not header_function_result:
+                self.log(f"[HEADER-FUNCTION-FAILED] Header: {header}, Value: {delivered_header_value}")
                 return False
+
+        return True
 
     async def notify_state(self, response):
         self.log(f"[NOTIFY STATE] {response}")
@@ -112,7 +103,8 @@ class Server:
 
     async def handle(self, websocket, host):
         self.log(f"[HANDLE-CONNECTION] {websocket.remote_address}")
-        if self.check_if_trusted(websocket) and self.handle_auth(websocket):
+
+        if self.check_if_trusted(websocket) and self.handle_headers(websocket.request_headers):
             await self.register(websocket)
             try:
                 if event_payload := self.state_event(websocket):
