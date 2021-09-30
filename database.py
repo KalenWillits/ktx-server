@@ -68,7 +68,8 @@ class Database:
         This is a "Pandas Table".
         '''
 
-        df = instance._on_create(self)
+        instance._on_create(self)
+        df = instance.df()
         instance = instance.__class__(**df.iloc[0].to_dict())
         table_name = to_snake(instance.__class__.__name__)
         if not self.has(table_name):
@@ -79,10 +80,10 @@ class Database:
         If there is no table, one is created.
         '''
 
-        if skip_on_create:
-            df = instance._to_df()
-        else:
-            df = instance._on_create(self)
+        if not skip_on_create:
+            instance._to_df()
+
+        df = instance.df()
 
         instance = instance.__class__(**df.iloc[0].to_dict())
         table_name = to_snake(instance.__class__.__name__)
@@ -167,7 +168,8 @@ class Database:
 
     def change(self, instance, **kwargs):
         table_name = to_snake(instance.__class__.__name__)
-        df = instance._on_change(self)
+        instance._on_change(self)
+        df = instance.df()
         instance = instance.__class__(**df.iloc[0].to_dict())
         operator = None
 

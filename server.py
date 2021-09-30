@@ -18,6 +18,7 @@ class Server:
         host: str = "localhost", port: int = 5000, debug: bool = True, db=None,
         trust: list = ["*"],
         auth=lambda username, password: True,
+        register=lambda username, password, register: None
         models: ModelManager = ModelManager([]),
         actions: ActionManager = ActionManager([]),
         tasks: TaskManager = TaskManager([]),
@@ -32,6 +33,7 @@ class Server:
         self.actions = actions
         self.auth = auth
         self.trust = trust
+        self.ssl = ssl
         self.commands = {
             "run": self.run_default(),
             "shell": self.run_shell(),
@@ -42,7 +44,7 @@ class Server:
             print(*args)
 
     def run_default(self):
-        return lambda: websockets.serve(self.handle, self.host, self.port)
+        return lambda: websockets.serve(self.handle, self.host, self.port, ssl=self.ssl)
 
     def run_shell(self):
         global db
@@ -77,14 +79,20 @@ class Server:
     def handle_auth(self, websocket) -> bool:
         username = websocket.request_headers.get("username")
         password = websocket.request_headers.get("password")
+        key = websocket.request_headers.get("register")
 
-        if self.auth(username, password):
-            self.log(f"[ACCESS GRANTED] {websocket.remote_address}")
-            return True
+        if key:
+            self.log("[REGISTER PROTOCOL]")
+            self.register(username, password, key)
 
         else:
-            self.log(f"[ACCESS DENIED] {websocket.remote_address}")
-            return False
+            if self.auth(username, password):
+                self.log(f"[ACCESS GRANTED] {websocket.remote_address}")
+                return True
+
+            else:
+                self.log(f"[ACCESS DENIED] {websocket.remote_address}")
+                return False
 
     async def notify_state(self, response):
         self.log(f"[NOTIFY STATE] {response}")

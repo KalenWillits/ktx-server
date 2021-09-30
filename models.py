@@ -50,18 +50,17 @@ class Model:
         return df
 
     def _on_read(self, db):
-        return self._to_df()
+        pass
 
     def _on_create(self, db):
         table_name = to_snake(self.__class__.__name__)
         self.pk = db.new_pk(table_name)
-        return self._to_df()
 
     def _on_change(self, db):
-        return self._to_df()
+        pass
 
     def _on_delete(self, db):
-        return self._to_df()
+        pass
 
     def __repr__(self):
         return self._to_df().to_string()
