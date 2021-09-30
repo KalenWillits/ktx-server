@@ -12,7 +12,7 @@ class Model:
 
     @pk.setter
     def pk(self, value):
-        if not hasattr(self, "pk"):
+        if not hasattr(self, "_pk"):
             self._pk = str(uuid4())
 
     @pk.getter
