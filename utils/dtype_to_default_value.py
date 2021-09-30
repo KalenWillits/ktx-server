@@ -1,4 +1,4 @@
-def dtypes_to_default_value(dtype):
+def dtype_to_default_value(dtype):
     if dtype == str:
         return ""
     elif dtype == int:

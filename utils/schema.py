@@ -1,6 +1,6 @@
 import inspect
 from typing import get_type_hints
-from utils.dtype_to_default_value import dtype_to_default_value
+from .dtype_to_default_value import dtype_to_default_value
 
 class Schema:
     def __init__(self, instance):
