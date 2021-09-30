@@ -42,7 +42,7 @@ class Server:
             print(*args)
 
     def run_default(self):
-        return lambda: websockets.serve(self.handle, self.host, self.port, ssl=self.ssl)
+        return lambda: websockets.serve(self.handle, self.host, self.port)
 
     def run_shell(self):
         global db
