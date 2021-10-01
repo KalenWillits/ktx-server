@@ -13,11 +13,30 @@ from .tasks import TaskManager
 
 
 class Server:
+    """
+    host: String representing the origin address.
+    port: Interger representing port used by server.
+    debug: Boolean that toggles if log messages are printed to the terminal.
+    trust: List of IP addresses the server will allow new websocket connections with.
+        By default all connections are allowed.
+    headers: Dictionary of custom header functions in the format of `{HEADER-NAME : HEADER-FUNCTION}`.
+        The header function should return a boolean value. (This is where authorization takes place.)
+    gate: Function taking a list of boolean values. These boolean values are a list of results genereated from the
+        header. By default, as long as one header is true, the connection is allowed. Custom conditions for each
+        header result can be accessed by using the index in order of the headers dict.
+    models: ModelManager class connecting the server to the database models.
+    actions: ActionManager class connecting the server to the action functions.
+    tasks: TaskManager class connecting the server to the task functions.
+    """
     def __init__(
         self,
-        host: str = "localhost", port: int = 5000, debug: bool = True, db=None,
+        host: str = "localhost",
+        port: int = 5000,
+        debug: bool = True,
+        db=None,
         trust: list = ["*"],
         headers: dict = dict(),
+        gate=any,
         models: ModelManager = ModelManager([]),
         actions: ActionManager = ActionManager([]),
         tasks: TaskManager = TaskManager([]),
@@ -32,6 +51,7 @@ class Server:
         self.actions = actions
         self.trust = trust
         self.headers = headers
+        self.gate = gate
         self.commands = {
             "run": self.run_default(),
             "shell": self.run_shell(),
@@ -75,15 +95,16 @@ class Server:
             return json.dumps(payload)
 
     def handle_headers(self, websocket_headers) -> bool:
+        header_results = list()
         for header, function in self.headers.items():
             delivered_header_value = websocket_headers.get(header)
             header_function_result = function(delivered_header_value)
+            header_results.append(header_function_result)
 
             if not header_function_result:
                 self.log(f"[HEADER-FUNCTION-FAILED] Header: {header}, Value: {delivered_header_value}")
-                return False
 
-        return True
+        return self.gate(header_results)
 
     async def notify_state(self, response):
         self.log(f"[NOTIFY STATE] {response}")
