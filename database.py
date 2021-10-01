@@ -4,13 +4,14 @@ import numpy as np
 import pytz
 import os
 from .utils import is_datetime, is_numeric, file_to_string, string_to_file, to_snake
+from models import ModelManager
 
 pd.options.mode.chained_assignment = None
 
 
 class Database:
 
-    def __init__(self, models=None, path: str = '', asset_models: tuple = ()):
+    def __init__(self, models: ModelManager = ModelManager([]), path: str = '', asset_models: tuple = ()):
         '''
         Simple in-memory database built with pandas to store data in ram.
         This is a "Pandas Database".

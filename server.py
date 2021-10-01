@@ -10,6 +10,7 @@ from .utils import get_snapshot
 from .models import ModelManager
 from .actions import ActionManager
 from .tasks import TaskManager
+from database import Database
 
 
 class Server:
@@ -17,6 +18,9 @@ class Server:
     host: String representing the origin address.
     port: Interger representing port used by server.
     debug: Boolean that toggles if log messages are printed to the terminal.
+    database: Database object passed from the pandas database.
+    data: String representing the location of the stored .csv files from the database.
+        This allows for the database to be initialized outside of the server.
     trust: List of IP addresses the server will allow new websocket connections with.
         By default all connections are allowed.
     headers: Dictionary of custom header functions in the format of `{HEADER-NAME : HEADER-FUNCTION}`.
@@ -33,7 +37,8 @@ class Server:
         host: str = "localhost",
         port: int = 5000,
         debug: bool = True,
-        db=None,
+        db: Database = None,
+        data: str = "/",
         trust: list = ["*"],
         headers: dict = dict(),
         gate=any,
@@ -45,7 +50,12 @@ class Server:
         self.port = port
         self.debug = debug
         self.clients = dict()
-        self.db = db
+
+        if self.db:
+            self.db = db
+        else:
+            self.db = Database(models=models, path=data)
+
         self.tasks = tasks
         self.models = models
         self.actions = actions
