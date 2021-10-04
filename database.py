@@ -166,6 +166,7 @@ class Database:
         return self.filter(table_name, **kwargs)
 
     def change(self, instance, **kwargs):
+        assert kwargs['pk'], "[ERROR-DATABASE-CHANGE] pk is required."
         table_name = to_snake(instance.__class__.__name__)
         instance._on_change(self)
         df = instance._to_df()

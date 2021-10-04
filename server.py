@@ -108,7 +108,7 @@ class Server:
         header_results = list()
         for header, function in self.headers.items():
             delivered_header_value = websocket_headers.get(header)
-            header_function_result = function(delivered_header_value)
+            header_function_result = function(delivered_header_value, db=db, server=self)
             header_results.append(header_function_result)
 
             if not header_function_result:
