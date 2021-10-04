@@ -4,7 +4,7 @@ import numpy as np
 import pytz
 import os
 from .utils import is_datetime, is_numeric, file_to_string, string_to_file, to_snake
-from models import ModelManager
+from .models import ModelManager
 
 pd.options.mode.chained_assignment = None
 

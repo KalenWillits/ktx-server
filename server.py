@@ -10,7 +10,7 @@ from .utils import get_snapshot
 from .models import ModelManager
 from .actions import ActionManager
 from .tasks import TaskManager
-from database import Database
+from .database import Database
 
 
 class Server:
