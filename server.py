@@ -51,7 +51,7 @@ class Server:
         self.debug = debug
         self.clients = dict()
 
-        if self.db:
+        if hasattr(self, "db"):
             self.db = db
         else:
             self.db = Database(models=models, path=data)
