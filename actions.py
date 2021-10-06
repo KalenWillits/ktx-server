@@ -1,8 +1,6 @@
 
 class Action:
-    key = None
-
-    def execute(*args, **kwargs):
+    async def execute(*args, **kwargs):
         """
         Overwrite this method to create a custom action.
         """

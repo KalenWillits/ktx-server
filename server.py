@@ -104,11 +104,11 @@ class Server:
             self.log(f"[NOTIFY-EVENT] {websocket.remote_address}")
             return json.dumps(payload)
 
-    def handle_headers(self, websocket_headers) -> bool:
+    def handle_headers(self, websocket_headers, websocket=None) -> bool:
         header_results = list()
         for header, function in self.headers.items():
             delivered_header_value = websocket_headers.get(header)
-            header_function_result = function(delivered_header_value, db=db, server=self)
+            header_function_result = function(delivered_header_value, db=db, server=self, websocket=websocket)
             header_results.append(header_function_result)
 
             if not header_function_result:
@@ -124,6 +124,9 @@ class Server:
                 for client in self.clients.keys():
                     await client.send(payload)
 
+    def broadcast(self, response):
+        asyncio.ensure_future(self.notify_state(response))
+
     async def register(self, websocket):
         self.log(f"[REGISTER-NEW-CONNECTION] {websocket.remote_address}")
         self.clients[websocket] = dict()
@@ -135,7 +138,7 @@ class Server:
     async def handle(self, websocket, host):
         self.log(f"[HANDLE-CONNECTION] {websocket.remote_address}")
 
-        if self.check_if_trusted(websocket) and self.handle_headers(websocket.request_headers):
+        if self.check_if_trusted(websocket) and self.handle_headers(websocket.request_headers, websocket=websocket):
             await self.register(websocket)
             try:
                 if event_payload := self.state_event(websocket):
@@ -143,7 +146,7 @@ class Server:
                 async for payload in websocket:
                     data = json.loads(payload)
                     for action_name in data.keys():
-                        if response := self.actions[action_name].execute(
+                        if response := await self.actions[action_name].execute(
                             websocket=websocket,
                             server=self,
                             db=self.db,
