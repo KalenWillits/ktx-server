@@ -1,5 +1,4 @@
 from uuid import uuid4
-import inspect
 import pandas as pd
 from .utils import to_snake, Schema, hydrate
 
@@ -52,8 +51,9 @@ class Model:
     def __repr__(self):
         return self._to_df().to_string()
 
+
 class ModelManager:
-    def __init__(self, models: list):
+    def __init__(self, *models):
         self.__models__ = models
         for model in models:
             self.__dict__[model.__name__] = model

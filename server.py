@@ -1,11 +1,13 @@
 import asyncio
 import json
+from uuid import uuid4
 
 import websockets
 import argparse
 
 from websockets.exceptions import ConnectionClosedError
 
+from .channels import ChannelManager
 from .models import ModelManager
 from .actions import ActionManager
 from .tasks import TaskManager
@@ -41,9 +43,10 @@ class Server:
         trust: list = ["*"],
         headers: dict = dict(),
         gate=any,
-        models: ModelManager = ModelManager([]),
-        actions: ActionManager = ActionManager([]),
-        tasks: TaskManager = TaskManager([]),
+        channels: ChannelManager = ChannelManager(),
+        models: ModelManager = ModelManager(),
+        actions: ActionManager = ActionManager(),
+        tasks: TaskManager = TaskManager(),
     ):
         self.host = host
         self.port = port
@@ -115,19 +118,18 @@ class Server:
 
         return self.gate(header_results)
 
-    async def notify_state(self, response):
-        self.log(f"[NOTIFY STATE] {response}")
+    async def broadcast(self, data: dict, channels: list):
+        self.log(f"[BROADCAST] {data} on channels {channels}")
         if self.clients:
-            payload = json.dumps(response)
+            payload = json.dumps(data)
             if payload:
-                for client in self.clients.keys():
-                    await client.send(payload)
-
-    def broadcast(self, response):
-        asyncio.ensure_future(self.notify_state(response))
+                for channel_name in channels:
+                    for client in self.channels[channel_name].subscribers:
+                        await client.send(payload)
 
     async def register(self, websocket):
         self.log(f"[REGISTER-NEW-CONNECTION] {websocket.remote_address}")
+        websocket.pk = str(uuid4())
         self.clients[websocket] = dict()
 
     async def unregister(self, websocket):
@@ -143,15 +145,14 @@ class Server:
                 # if event_payload := self.state_event(websocket):
                 #     await websocket.send(event_payload)
                 async for payload in websocket:
-                    data = json.loads(payload)
-                    for action_name in data.keys():
-                        if response := self.actions[action_name].execute(
+                    query = json.loads(payload)
+                    for action_name in query.keys():
+                        response, channels = self.actions[action_name].execute(
                             websocket=websocket,
                             server=self,
                             db=self.db,
-                            **data.get(action_name)
-                        ):
-                            await self.notify_state(response)
+                            **query.get(action_name))
+                        await self.broadcast(response, channels)
 
             except ConnectionClosedError:
                 self.log(f"[CONNECTION CLOSED] {websocket.remote_address}")

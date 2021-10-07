@@ -1,9 +1,7 @@
-import asyncio
-
 class Task:
     type = None
 
-    def execute(*args, **kwargs):
+    def execute(**kwargs):
         '''
         Overwrite this method to create custom tasks.
         Tasks in startup and shutdown are syncronous tasks,
@@ -13,7 +11,7 @@ class Task:
 
 
 class TaskManager:
-    def __init__(self, tasks: list = list()):
+    def __init__(self, *tasks):
         self.startup_queue = list()
         self.loop_queue = list()
         self.shutdown_queue = list()
