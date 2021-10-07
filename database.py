@@ -37,6 +37,12 @@ class Database:
     def __getitem__(self, key):
         return self.__dict__[key]
 
+    def __repr__(self):
+        output = ""
+        for model in self.models:
+            output += f"\n{model.__name__}/{self[model.__name__].shape()}"
+        return output
+
     def has(self, model_name: str):
         if hasattr(self, model_name):
             if isinstance(self[model_name], pd.DataFrame):
