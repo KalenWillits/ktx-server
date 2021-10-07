@@ -52,9 +52,6 @@ class Database:
         return False
 
     def create(self, model_name, **kwargs):
-        '''Adds a model instance to the corresponding table.
-        If there is no table, one is created.
-        '''
         instance = self.models[model_name](**kwargs)
         df = instance._to_df()
 
@@ -84,7 +81,7 @@ class Database:
                             value = pytz.timezone('UTC').localize(value)
                         df[column] = pd.to_datetime(df[column])
 
-                    df = column_filters["operator"](df, column, value)
+                    df = column_filters[operator](df, column, value)
 
                     if is_datetime(value):
                         df[column] = df[column].dt.strftime('%Y-%m-%d %H:%M:%S')
