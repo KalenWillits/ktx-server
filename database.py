@@ -159,7 +159,7 @@ class Database:
 
     def save(self):
         for model in self.models:
-            if name := to_snake((model.__name__)):
+            if name := model.__name__:
                 if issubclass(model, self.asset_models):
                     for file, file_name in zip(self[name]['file'].values, self[name]['file_name']):
                         string_to_file(file, os.path.join(self.path, file_name))
@@ -173,7 +173,7 @@ class Database:
     def load(self):
         self.init_schema()
         for model in self.models:
-            if name := to_snake((model.__name__)):
+            if name := model.__name__:
                 if os.path.isfile(os.path.join(self.path, f'{name}.csv')):
                     self[name] = pd.read_csv(os.path.join(self.path, f'{name}.csv'))
 
