@@ -1,6 +1,5 @@
 import pandas as pd
 from typing import get_type_hints
-import numpy as np
 import pytz
 import os
 from .utils import (
@@ -8,7 +7,6 @@ from .utils import (
     is_numeric,
     file_to_string,
     string_to_file,
-    to_snake,
     handle_sort,
     handle_limit,
     column_filters,
@@ -100,7 +98,7 @@ class Database:
         If a model is provided, an instance of the model will be returned instead of a dataframe.
         '''
 
-        df = self.filter(to_snake(model_name), pk=pk)
+        df = self.filter(model_name, pk=pk)
         if not df.empty:
             return self.models[model_name](**df.iloc[0].to_dict())
 
@@ -124,7 +122,7 @@ class Database:
 
     def init_schema(self):
         for model in self.models:
-            if name := to_snake((model.__name__)):
+            if name := model.__name__:
                 if not self.has(name):
                     empty_df = model()._to_df().iloc[0:0]
                     self[name] = empty_df
@@ -134,7 +132,7 @@ class Database:
         Changes lists and sets from strings back into lists and sets on load.
         '''
         for model in self.models:
-            if name := to_snake((model.__name__)):
+            if name := model.__name__:
                 if self.has(name):
                     dtypes = get_type_hints(model)
                     for field in self[name].columns:
