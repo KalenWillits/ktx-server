@@ -91,18 +91,8 @@ class Database:
         else:
             return pd.DataFrame()
 
-    def get(self, model_name, pk=None, **kwargs):
-        '''
-        Finds a dataframe of a model instance by pk.
-
-        If a table_name is not provided, a loop itereates through all tables checking if the given pk is present.
-        Which is a much slower process. It is recommended to always provide a table name for any process executing
-        at run time.
-
-        If a model is provided, an instance of the model will be returned instead of a dataframe.
-        '''
-
-        df = self.filter(model_name, pk=pk)
+    def get(self, model_name, pk=None):
+        df = self.query(model_name, pk=pk)
         if not df.empty:
             return self.models[model_name](**df.iloc[0].to_dict())
 
