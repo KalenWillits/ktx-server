@@ -40,7 +40,7 @@ class Database:
     def __repr__(self):
         output = ""
         for model in self.models:
-            output += f"\n{model.__name__}/{str(self[model.__name__].shape())}"
+            output += f"\n{model.__name__}/{self[model.__name__].shape}"
         return output
 
     def has(self, model_name: str):
