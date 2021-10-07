@@ -2,6 +2,7 @@ import pandas as pd
 from typing import get_type_hints
 import pytz
 import os
+
 from .utils import (
     is_datetime,
     is_numeric,
@@ -11,7 +12,8 @@ from .utils import (
     handle_limit,
     column_filters,
 )
-from .models import ModelManager
+
+from .models import ModelManager, Model
 
 pd.options.mode.chained_assignment = None
 
@@ -44,14 +46,14 @@ class Database:
             output += f"\n{model.__name__}(columns: {shape[1]}, rows: {shape[0]})"
         return output
 
-    def has(self, model_name: str):
+    def has(self, model_name: str) -> bool:
         if hasattr(self, model_name):
             if isinstance(self[model_name], pd.DataFrame):
                 return True
 
         return False
 
-    def create(self, model_name, **kwargs):
+    def create(self, model_name, **kwargs) -> pd.DataFrame:
         instance = self.models[model_name](**kwargs)
         df = instance._to_df()
 
@@ -61,7 +63,7 @@ class Database:
             self[model_name] = df
         return df
 
-    def query(self, model_name, **kwargs):
+    def query(self, model_name: str, **kwargs) -> pd.DataFrame:
         if self.has(model_name):
             df = self[model_name]
 
@@ -91,26 +93,20 @@ class Database:
         else:
             return pd.DataFrame()
 
-    def get(self, model_name, pk=None):
+    def get(self, model_name: str, pk: str) -> Model:
         df = self.query(model_name, pk=pk)
         if not df.empty:
             return self.models[model_name](**df.iloc[0].to_dict())
 
         return None
 
-    def update(self, model_name, **kwargs):
-        indexes = self.query(model_name, **kwargs).index
-
+    def update(self, model_name: str, query: pd.DataFrame, **kwargs):
         for column, value in kwargs.items():
-            for index in indexes:
-                self[model_name][column][index] = [value]
+            self[model_name][column].iloc[query.index] = [value]
 
-        try:
-            return self[model_name].iloc[indexes]
-        except KeyError:
-            return self[model_name].iloc[0:0]
+        return self[model_name].iloc[query.index]
 
-    def drop(self, model_name, **kwargs):
+    def drop(self, model_name: str, **kwargs) -> None:
         indexes = self.query(model_name, **kwargs).index
         self[model_name].drop(index=indexes, inplace=True)
 
