@@ -51,8 +51,6 @@ class Database:
         If there is no table, one is created.
         '''
         instance = self.models[model_name](**kwargs)
-        instance._on_create()
-
         df = instance._to_df()
 
         if self.has(model_name):
@@ -119,6 +117,10 @@ class Database:
             return self[model_name].iloc[indexes]
         except KeyError:
             return self[model_name].iloc[0:0]
+
+    def drop(self, model_name, **kwargs):
+        indexes = self.query(model_name, **kwargs).index
+        self[model_name].drop(index=indexes, inplace=True)
 
     def init_schema(self):
         for model in self.models:

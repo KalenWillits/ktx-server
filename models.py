@@ -49,18 +49,6 @@ class Model:
         df = pd.DataFrame([self._to_dict()])
         return df
 
-    def _on_read(self, db):
-        pass
-
-    def _on_create(self, db):
-        pass
-
-    def _on_change(self, db):
-        pass
-
-    def _on_delete(self, db):
-        pass
-
     def __repr__(self):
         return self._to_df().to_string()
 
