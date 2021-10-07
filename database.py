@@ -38,9 +38,10 @@ class Database:
         return self.__dict__[key]
 
     def __repr__(self):
-        output = ""
+        output = "<object 'Database'>"
         for model in self.models:
-            output += f"\n{model.__name__}/{self[model.__name__].shape}"
+            shape = self[model.__name__].shape
+            output += f"\n{model.__name__}(columns: {shape[1]}, rows: {shape[0]})"
         return output
 
     def has(self, model_name: str):
