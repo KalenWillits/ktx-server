@@ -3,7 +3,16 @@ from typing import get_type_hints
 import numpy as np
 import pytz
 import os
-from .utils import is_datetime, is_numeric, file_to_string, string_to_file, to_snake
+from .utils import (
+    is_datetime,
+    is_numeric,
+    file_to_string,
+    string_to_file,
+    to_snake,
+    handle_sort,
+    handle_limit,
+    column_filters,
+)
 from .models import ModelManager
 
 pd.options.mode.chained_assignment = None
@@ -30,80 +39,34 @@ class Database:
     def __getitem__(self, key):
         return self.__dict__[key]
 
-    def has(self, table_name, column=None, value=None):
-        if column and value:
-            if hasattr(self, table_name):
-                if hasattr(self[table_name], column):
-                    df = self[table_name][column]
-                    df_filtered = df[df.isin([value])]
-                    return not df_filtered.empty
-            return False
-
-        elif column:
-            if hasattr(self, table_name):
-                if hasattr(self[table_name], column):
-                    return True
-            return False
-
-        elif not value or not column:
-            if hasattr(self, table_name):
-                if hasattr(self[table_name], 'empty'):
-                    return not self[table_name].empty
-        else:
-            if hasattr(self, table_name):
-                return any([self[table_name][column] == value])
+    def has(self, model_name: str):
+        if hasattr(self, model_name):
+            if isinstance(self[model_name], pd.DataFrame):
+                return True
 
         return False
 
-    def make(self, instance):
-        '''
-        Stores a dataframe in an attribute to the database as a pandas DataFrame.
-        This is a "Pandas Table".
-        '''
-
-        instance._on_create(self)
-        df = instance._to_df()
-        instance = instance.__class__(**df.iloc[0].to_dict())
-        table_name = to_snake(instance.__class__.__name__)
-        if not self.has(table_name):
-            self[table_name] = df
-
-    def add(self, instance, skip_on_create=False):
+    def create(self, model_name, **kwargs):
         '''Adds a model instance to the corresponding table.
         If there is no table, one is created.
         '''
-
-        if not skip_on_create:
-            instance._to_df()
+        instance = self.models[model_name](**kwargs)
+        instance._on_create()
 
         df = instance._to_df()
 
-        instance = instance.__class__(**df.iloc[0].to_dict())
-        table_name = to_snake(instance.__class__.__name__)
-        if self.has(table_name):
-            self[table_name] = self[table_name].append(df, ignore_index=True)
+        if self.has(model_name):
+            self[model_name] = self[model_name].append(df, ignore_index=True)
         else:
-            self[table_name] = df
+            self[model_name] = df
         return df
 
-    def filter(self, table_name, **kwargs):
-        if self.has(table_name):
-            df = self[table_name]
-            keys = kwargs.keys()
+    def query(self, model_name, **kwargs):
+        if self.has(model_name):
+            df = self[model_name]
 
-            if '_sort' in keys:
-                if kwargs.get('_sort'):
-                    if kwargs['_sort'][0] == '-':
-                        ascending = False
-                        kwargs['_sort'] = kwargs['_sort'][1:]
-                    else:
-                        ascending = True
-                    df = df.sort_values(kwargs['_sort'], ascending=ascending)
-                    del kwargs['_sort']
-
-            if '_limit' in keys:
-                df = df.head(kwargs['_limit'])
-                del kwargs['_limit']
+            kwargs, df = handle_sort(kwargs, df)
+            kwargs, df = handle_limit(kwargs, df)
 
             for key, value in kwargs.items():
                 if isinstance(value, (list, set)):
@@ -118,22 +81,7 @@ class Database:
                             value = pytz.timezone('UTC').localize(value)
                         df[column] = pd.to_datetime(df[column])
 
-                    if operator == 'f':
-                        df = df[df[column].str.contains(value, regex=False)]
-                    elif operator == 're':
-                        df = df[df[column].str.contains(value)]
-                    elif operator == 'gt':
-                        df = df[df[column] > value]
-                    elif operator == 'lt':
-                        df = df[df[column] < value]
-                    elif operator == 'gte':
-                        df = df[df[column] >= value]
-                    elif operator == 'lte':
-                        df = df[df[column] <= value]
-                    elif operator == 'max':
-                        df = df[df[column] == df[column].max()]
-                    elif operator == 'min':
-                        df = df[df[column] == df[column].min()]
+                    df = column_filters["operator"](df, column, value)
 
                     if is_datetime(value):
                         df[column] = df[column].dt.strftime('%Y-%m-%d %H:%M:%S')
@@ -143,7 +91,7 @@ class Database:
         else:
             return pd.DataFrame()
 
-    def get(self, model, pk):
+    def get(self, model_name, pk=None, **kwargs):
         '''
         Finds a dataframe of a model instance by pk.
 
@@ -154,62 +102,23 @@ class Database:
         If a model is provided, an instance of the model will be returned instead of a dataframe.
         '''
 
-        df = self.filter(to_snake(model.__name__), pk=pk)
+        df = self.filter(to_snake(model_name), pk=pk)
         if not df.empty:
-            return model(**df.iloc[0].to_dict())
+            return self.models[model_name](**df.iloc[0].to_dict())
 
         return None
 
-    def query(self, instance, **kwargs):
-        instance._on_read(self)
-        table_name = to_snake(instance.__class__.__name__)
-        return self.filter(table_name, **kwargs)
+    def update(self, model_name, **kwargs):
+        indexes = self.query(model_name, **kwargs).index
 
-    def change(self, instance, **kwargs):
-        assert kwargs['pk'], "[ERROR-DATABASE-CHANGE] pk is required."
-        table_name = to_snake(instance.__class__.__name__)
-        instance._on_change(self)
-        df = instance._to_df()
-        instance = instance.__class__(**df.iloc[0].to_dict())
-        operator = None
-
-        indexes = self[table_name][self[table_name].pk == kwargs['pk']].index
-        del kwargs['pk']
-        for key, value in kwargs.items():
-            if '__' in key:
-                key, operator = key.split('__')
-
-            default_value = instance.__class__.__dict__.get(key)
-            if isinstance(value, np.ndarray):
-                value = value.to_list()
-            if (is_list := isinstance(default_value, list)) or (is_set := isinstance(default_value, set)):
-                if operator == 'add':
-                    for index in indexes:
-                        current_values = self[table_name][key].iloc[index]
-                        if is_list:
-                            self[table_name].loc[index, [key]] = [[*current_values, *value]]
-                        elif is_set:
-                            self[table_name].loc[index, [key]] = [{*current_values, *value}]
-                    continue
-
-                elif operator == 'rm':
-                    for index in indexes:
-                        current_values = self[table_name][key].iloc[index]
-                        for sub_value in value:
-                            current_values.remove(sub_value)
-                        self[table_name].loc[index, [key]] = [current_values]
-                    continue
-
-                for index in indexes:
-                    self[table_name].loc[index, [key]] = [value]
-
-            else:
-                self[table_name].loc[indexes, [key]] = [value]
+        for column, value in kwargs.items():
+            for index in indexes:
+                self[model_name][column][index] = [value]
 
         try:
-            return self[table_name].iloc[indexes]
+            return self[model_name].iloc[indexes]
         except KeyError:
-            return self[table_name].iloc[0:0]
+            return self[model_name].iloc[0:0]
 
     def init_schema(self):
         for model in self.models:

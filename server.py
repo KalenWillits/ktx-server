@@ -6,7 +6,6 @@ import argparse
 
 from websockets.exceptions import ConnectionClosedError
 
-from .utils import get_snapshot
 from .models import ModelManager
 from .actions import ActionManager
 from .tasks import TaskManager
@@ -98,11 +97,11 @@ class Server:
         self.log(f"[UNTRUSTED-SOURCE-DENIED] {websocket.remote_address}")
         return False
 
-    def state_event(self, websocket):
-        payload = get_snapshot(self.clients[websocket], self.db)
-        if payload:
-            self.log(f"[NOTIFY-EVENT] {websocket.remote_address}")
-            return json.dumps(payload)
+    # def state_event(self, websocket):
+        # payload = get_snapshot(self.clients[websocket], self.db)
+        # if payload:
+        #     self.log(f"[NOTIFY-EVENT] {websocket.remote_address}")
+        #     return json.dumps(payload)
 
     def handle_headers(self, websocket_headers, websocket=None) -> bool:
         header_results = list()
@@ -141,12 +140,12 @@ class Server:
         if self.check_if_trusted(websocket) and self.handle_headers(websocket.request_headers, websocket=websocket):
             await self.register(websocket)
             try:
-                if event_payload := self.state_event(websocket):
-                    await websocket.send(event_payload)
+                # if event_payload := self.state_event(websocket):
+                #     await websocket.send(event_payload)
                 async for payload in websocket:
                     data = json.loads(payload)
                     for action_name in data.keys():
-                        if response := await self.actions[action_name].execute(
+                        if response := self.actions[action_name].execute(
                             websocket=websocket,
                             server=self,
                             db=self.db,

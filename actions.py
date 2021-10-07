@@ -1,6 +1,6 @@
 
 class Action:
-    async def execute(*args, **kwargs):
+    def execute(*args, **kwargs):
         """
         Overwrite this method to create a custom action.
         """
