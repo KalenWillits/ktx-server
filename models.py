@@ -62,5 +62,8 @@ class ModelManager:
         for model in self.__models__:
             yield model
 
-    def __getitem__(self, index: int):
-        return self.__models__[index]
+    def __getitem__(self, key_or_index):
+        if isinstance(key_or_index, int):
+            return self.__models__[key_or_index]
+        else:
+            return getattr(self, key_or_index)
