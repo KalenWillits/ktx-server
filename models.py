@@ -38,7 +38,7 @@ class Model:
         return hydrate(self.__class__, df, db)
 
     def _to_dict(self) -> dict:
-        instance_values = dict()
+        instance_values = {}
         for field, dtype, default_value in self._schema.items():
             instance_values[field] = self[field]
 

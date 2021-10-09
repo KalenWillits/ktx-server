@@ -40,8 +40,8 @@ class Server:
         debug: bool = True,
         db: Database = None,
         data: str = "/",
-        trust: list = ["*"],
-        headers: dict = dict(),
+        trust: list = [],
+        headers: dict = {},
         gate=any,
         channels: ChannelManager = ChannelManager(),
         models: ModelManager = ModelManager(),
@@ -51,7 +51,7 @@ class Server:
         self.host = host
         self.port = port
         self.debug = debug
-        self.clients = dict()
+        self.clients = {}
 
         if hasattr(self, "db"):
             self.db = db
@@ -101,10 +101,10 @@ class Server:
         return False
 
     # def state_event(self, websocket):
-        # payload = get_snapshot(self.clients[websocket], self.db)
-        # if payload:
-        #     self.log(f"[NOTIFY-EVENT] {websocket.remote_address}")
-        #     return json.dumps(payload)
+    #     payload = get_snapshot(self.clients[websocket], self.db)
+    #     if payload:
+    #         self.log(f"[NOTIFY-EVENT] {websocket.remote_address}")
+    #         return json.dumps(payload)
 
     def handle_headers(self, websocket_headers, websocket=None) -> bool:
         header_results = list()
@@ -118,23 +118,19 @@ class Server:
 
         return self.gate(header_results)
 
-    async def broadcast(self, data: dict, channels: list):
-        self.log(f"[BROADCAST] {data} on channels {channels}")
-        if self.clients:
-            payload = json.dumps(data)
-            if payload:
-                for channel_name in channels:
-                    for client in self.channels[channel_name].subscribers:
-                        await client.send(payload)
+    async def broadcast(self, payload: json, channels: list):
+        self.log(f"[BROADCAST] {payload} on channels {channels}")
+        for channel_name in channels:
+            self.channels[channel_name].broadcast(payload)
 
     async def register(self, websocket):
         self.log(f"[REGISTER-NEW-CONNECTION] {websocket.remote_address}")
         websocket.pk = str(uuid4())
-        self.clients[websocket] = dict()
+        self.clients[websocket.pk] = websocket
 
     async def unregister(self, websocket):
         self.log(f"[UNREGISTER-CLOSE-CONNECTION] {websocket.remote_address}")
-        del self.clients[websocket]
+        del self.clients[websocket.pk]
 
     async def handle(self, websocket, host):
         self.log(f"[HANDLE-CONNECTION] {websocket.remote_address}")
@@ -151,8 +147,10 @@ class Server:
                             websocket=websocket,
                             server=self,
                             db=self.db,
+                            channels=self.channels,
                             **query.get(action_name))
-                        await self.broadcast(response, channels)
+
+                        self.broadcast(response, channels)
 
             except ConnectionClosedError:
                 self.log(f"[CONNECTION CLOSED] {websocket.remote_address}")

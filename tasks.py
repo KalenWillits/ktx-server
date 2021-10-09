@@ -1,7 +1,7 @@
 class Task:
     type = None
 
-    def execute(**kwargs):
+    def execute(self, **kwargs):
         '''
         Overwrite this method to create custom tasks.
         Tasks in startup and shutdown are syncronous tasks,
@@ -12,17 +12,17 @@ class Task:
 
 class TaskManager:
     def __init__(self, *tasks):
-        self.startup_queue = list()
-        self.loop_queue = list()
-        self.shutdown_queue = list()
+        self.startup_queue = []
+        self.loop_queue = []
+        self.shutdown_queue = []
 
         for task in tasks:
             if task.type == 'startup':
-                self.startup_queue.append(task)
+                self.startup_queue.append(task())
             elif task.type == 'periodic':
-                self.loop_queue.append(task)
+                self.loop_queue.append(task())
             elif task.type == 'shutdown':
-                self.shutdown_queue.append(task)
+                self.shutdown_queue.append(task())
             else:
                 raise Exception(f'{task.type} is an invalid task type. task type is required.')
 
