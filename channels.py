@@ -2,10 +2,10 @@ import asyncio
 
 
 class Channel:
-    def __init__(self, publishers: set = set(), subscribers: set = set()):
+    def __init__(self, publishers: set = set(), subscribers: set = set(), name: str = None):
         self.subscribers = subscribers
         self.publishers = publishers
-        self.name = self.__class__.__name__
+        self.name = name if name else self.__class__.__name__
 
     def subscribe(self, websocket_pk):
         self.subscribers.add(websocket_pk)

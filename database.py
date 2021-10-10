@@ -20,7 +20,7 @@ pd.options.mode.chained_assignment = None
 
 class Database:
 
-    def __init__(self, models: ModelManager = ModelManager([]), path: str = '', asset_models: tuple = ()):
+    def __init__(self, models: ModelManager = ModelManager(), path: str = '', asset_models: tuple = ()):
         '''
         Simple in-memory database built with pandas to store data in ram.
         This is a "Pandas Database".
