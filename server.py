@@ -42,7 +42,7 @@ class Server:
         data: str = "/",
         trust: list = [],
         headers: dict = {},
-        gate=any,
+        gate=all,
         channels: ChannelManager = ChannelManager(),
         models: ModelManager = ModelManager(),
         actions: ActionManager = ActionManager(),
@@ -61,6 +61,7 @@ class Server:
         self.tasks = tasks
         self.models = models
         self.actions = actions
+        self.channels = channels
         self.trust = trust
         self.headers = headers
         self.gate = gate
@@ -94,7 +95,7 @@ class Server:
         return lambda: embed()
 
     def check_if_trusted(self, websocket) -> bool:
-        if websocket.remote_address[0] in self.trust or "*" in self.trust:
+        if websocket.remote_address[0] in self.trust or not self.trust:
             return True
 
         self.log(f"[UNTRUSTED-SOURCE-DENIED] {websocket.remote_address}")
@@ -107,7 +108,7 @@ class Server:
     #         return json.dumps(payload)
 
     def handle_headers(self, websocket_headers, websocket=None) -> bool:
-        header_results = list()
+        header_results = []
         for header, function in self.headers.items():
             delivered_header_value = websocket_headers.get(header)
             header_function_result = function(delivered_header_value, db=db, server=self, websocket=websocket)
@@ -118,10 +119,11 @@ class Server:
 
         return self.gate(header_results)
 
-    async def broadcast(self, payload: json, channels: list):
+    def broadcast(self, payload: json, channels: list):
         self.log(f"[BROADCAST] {payload} on channels {channels}")
         for channel_name in channels:
-            self.channels[channel_name].broadcast(payload)
+            for subscriber_pk in self.channels[channel_name].subscribers:
+                asyncio.ensure_future(self.clients[subscriber_pk].send(payload))
 
     async def register(self, websocket):
         self.log(f"[REGISTER-NEW-CONNECTION] {websocket.remote_address}")
@@ -143,14 +145,18 @@ class Server:
                 async for payload in websocket:
                     query = json.loads(payload)
                     for action_name in query.keys():
-                        response, channels = self.actions[action_name].execute(
+                        if action := self.actions[action_name]:
+                            response, channels = action.execute(
                             websocket=websocket,
                             server=self,
                             db=self.db,
                             channels=self.channels,
                             **query.get(action_name))
 
-                        self.broadcast(response, channels)
+                            self.broadcast(response, channels)
+
+                        else:
+                            await websocket.send(json.dumps({"Errors":[f"No action [{action_name}]"]}))
 
             except ConnectionClosedError:
                 self.log(f"[CONNECTION CLOSED] {websocket.remote_address}")

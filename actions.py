@@ -24,10 +24,11 @@ class ActionManager:
     def __init__(self, *actions):
         self.__actions__ = {}
         for action in actions:
-            self.__actions__[action.name] = action()
+            action_instance = action()
+            self.__actions__[action_instance.name] = action_instance
 
     def __getitem__(self, key):
-        return self.__actions__[key]
+        return self.__actions__.get(key)
 
     def __setitem__(self, key, value):
         self.__actions__[key] = value

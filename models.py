@@ -56,7 +56,7 @@ class ModelManager:
     def __init__(self, *models):
         self.__models__ = models
         for model in models:
-            self.__dict__[model.__name__] = model
+            self.__dict__[model.__class__.__name__] = model
 
     def __iter__(self):
         for model in self.__models__:
