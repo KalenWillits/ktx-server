@@ -214,15 +214,6 @@ class Server:
                                                             server=self)
                                                             )
 
-                asyncio.get_event_loop().run_until_complete(self.tasks.execute_schedule_tasks(
-                                                            db=self.db,
-                                                            models=self.models,
-                                                            tasks=self.tasks,
-                                                            actions=self.actions,
-                                                            channels=self.channels,
-                                                            server=self)
-                                                            )
-
                 asyncio.get_event_loop().run_forever()
             except KeyboardInterrupt:
                 self.log("[SHUTDOWN]")
