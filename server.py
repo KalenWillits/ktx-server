@@ -84,6 +84,8 @@ class Server:
         models = self.models
         global actions
         actions = self.actions
+        global channels
+        channels = self.channels
         global tasks
         tasks = self.tasks
 
@@ -106,7 +108,15 @@ class Server:
         header_results = []
         for header, function in self.headers.items():
             delivered_header_value = websocket_headers.get(header)
-            header_function_result = function(delivered_header_value, db=db, server=self, websocket=websocket)
+            header_function_result = function(
+                delivered_header_value,
+                db=db,
+                models=self.models,
+                channels=self.channels,
+                tasks=self.tasks,
+                actions=self.actions,
+                server=self,
+                websocket=websocket)
             header_results.append(header_function_result)
 
             if not header_function_result:
@@ -187,18 +197,44 @@ class Server:
             try:
                 self.log(f"[STARTING] {self.host}:{self.port}")
                 self.db.load()
-                self.tasks.execute_startup_tasks(db=self.db, models=self.models, server=self)
+                self.tasks.execute_startup_tasks(db=self.db,
+                                                 models=self.models,
+                                                 tasks=self.tasks,
+                                                 actions=self.actions,
+                                                 channels=self.channels,
+                                                 server=self)
 
                 asyncio.get_event_loop().run_until_complete(init_function())
-                asyncio.get_event_loop().run_until_complete(self.tasks.execute_periodic_tasks(
-                                                            db=self.db, server=self)
+                asyncio.get_event_loop().run_until_complete(self.tasks.execute_interval_tasks(
+                                                            db=self.db,
+                                                            models=self.models,
+                                                            tasks=self.tasks,
+                                                            actions=self.actions,
+                                                            channels=self.channels,
+                                                            server=self)
                                                             )
+
+                asyncio.get_event_loop().run_until_complete(self.tasks.execute_schedule_tasks(
+                                                            db=self.db,
+                                                            models=self.models,
+                                                            tasks=self.tasks,
+                                                            actions=self.actions,
+                                                            channels=self.channels,
+                                                            server=self)
+                                                            )
+
                 asyncio.get_event_loop().run_forever()
             except KeyboardInterrupt:
                 self.log("[SHUTDOWN]")
             finally:
                 self.log("[CLEANUP-TASKS-STARTED]")
-                self.tasks.execute_shutdown_tasks(db=self.db, models=self.models, server=self)
+                self.tasks.execute_shutdown_tasks(db=self.db,
+                                                 models=self.models,
+                                                 tasks=self.tasks,
+                                                 actions=self.actions,
+                                                 channels=self.channels,
+                                                 server=self)
+
                 self.db.save()
                 self.log("[CLEANUP-TASKS-COMPLETE]")
         else:
