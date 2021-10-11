@@ -1,4 +1,3 @@
-import json
 
 
 class Action:
@@ -6,7 +5,7 @@ class Action:
         self.name = self.__class__.__name__
 
     def response(self, data: dict, channels: list):
-        return json.dumps({self.name: data}), channels
+        return {self.name: data}, channels
 
     def execute(self, **kwargs):
         data = {}

@@ -101,11 +101,6 @@ class Server:
         self.log(f"[UNTRUSTED-SOURCE-DENIED] {websocket.remote_address}")
         return False
 
-    # def state_event(self, websocket):
-    #     payload = get_snapshot(self.clients[websocket], self.db)
-    #     if payload:
-    #         self.log(f"[NOTIFY-EVENT] {websocket.remote_address}")
-    #         return json.dumps(payload)
 
     def handle_headers(self, websocket_headers, websocket=None) -> bool:
         header_results = []
@@ -136,27 +131,37 @@ class Server:
 
     async def handle(self, websocket, host):
         self.log(f"[HANDLE-CONNECTION] {websocket.remote_address}")
-
         if self.check_if_trusted(websocket) and self.handle_headers(websocket.request_headers, websocket=websocket):
             await self.register(websocket)
             try:
-                # if event_payload := self.state_event(websocket):
-                #     await websocket.send(event_payload)
                 async for payload in websocket:
+                    response = {}
+                    channels = set()
+                    errors = {"Errors": []}
                     query = json.loads(payload)
                     for action_name in query.keys():
                         if action := self.actions[action_name]:
-                            response, channels = action.execute(
-                            websocket=websocket,
-                            server=self,
-                            db=self.db,
-                            channels=self.channels,
-                            **query.get(action_name))
+                            try:
+                                data, action_channels = action.execute(
+                                websocket=websocket,
+                                server=self,
+                                db=self.db,
+                                channels=self.channels,
+                                **query.get(action_name))
 
-                            self.broadcast(response, channels)
+                                response.update(data)
+                                channels.update(action_channels)
+
+                            except Exception as error:
+                                errors["Errors"].append(error)
 
                         else:
                             await websocket.send(json.dumps({"Errors":[f"No action [{action_name}]"]}))
+
+                    if errors["Errors"]:
+                        response.update(errors)
+
+                    self.broadcast(json.dumps(response), list(channels))
 
             except ConnectionClosedError:
                 self.log(f"[CONNECTION CLOSED] {websocket.remote_address}")
