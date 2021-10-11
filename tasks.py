@@ -32,7 +32,13 @@ class Startup(BaseTask):
 
 
 class Interval(BaseTask):
-    interval = lambda **kwargs: 60*60  # One hour
+    def set(self, **kwargs) -> int:
+        """
+        Overwrite this function to return the interval of time between task executions in seconds
+        as an integer.
+        """
+        raise Exception(f"[ERROR] Task {self._name} set method not implimented")
+
 
     async def execute(self, **kwargs):
         "Overwrite this method to create custom tasks."
@@ -80,7 +86,7 @@ class TaskManager:
     async def execute_interval_tasks(self, **kwargs):
         while True:
             for task in self.__tasks__[TaskTypes.INTERVAL]:
-                asyncio.sleep(task.interval(**kwargs))
+                asyncio.sleep(task.set(**kwargs))
                 await task.execute(**kwargs)
 
             if not self.__tasks__[TaskTypes.INTERVAL]:
