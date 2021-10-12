@@ -40,9 +40,8 @@ class Server:
         port: int = 5000,
         debug: bool = True,
         db: Database = None,
-        data: str = "/",
+        data: str = "./",
         trust: list = [],
-        headers: dict = {},
         gate=all,
         channels: ChannelManager = ChannelManager(),
         models: ModelManager = ModelManager(),
@@ -108,9 +107,9 @@ class Server:
     def handle_headers(self, websocket_headers, websocket=None) -> bool:
         header_results = []
         for header in self.headers:
-            value = websocket_headers.get(header)
+            data = json.loads(websocket_headers.get(header))
             header_function_result = header.execute(
-                value,
+                data=data,
                 db=db,
                 models=self.models,
                 channels=self.channels,
@@ -121,7 +120,7 @@ class Server:
             header_results.append(header_function_result)
 
             if not header_function_result:
-                self.log(f"[HEADER-FUNCTION-FAILED] Header: {header}, Value: {value}")
+                self.log(f"[HEADER-FAILED] Header: {header._name}, Value: {data}")
 
         return self.gate(header_results)
 
