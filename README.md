@@ -14,7 +14,7 @@ actions = ActionManager()
 tasks = TaskManager()
 channels = ChannelManager()
 
-server = Server(models=models, tasks=tasks, actions=actions, path="data/")
+merver = Server(models=models, tasks=tasks, actions=actions, path="data/")
 
 if __name__ == "__main__":
     server.run()
