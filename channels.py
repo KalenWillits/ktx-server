@@ -1,17 +1,15 @@
-import asyncio
 
 
 class Channel:
     def __init__(self, publishers: set = set(), subscribers: set = set(), name: str = None):
-        self.subscribers = subscribers
-        self.publishers = publishers
-        self.name = name if name else self.__class__.__name__
+        self._subscribers = subscribers
+        self._name = name if name else self.__class__.__name__
 
     def subscribe(self, websocket_pk):
-        self.subscribers.add(websocket_pk)
+        self._subscribers.add(websocket_pk)
 
     def unsubscribe(self, websocket_pk):
-        self.subscribers.remove(websocket_pk)
+        self._subscribers.remove(websocket_pk)
 
 
 class ChannelManager:
@@ -28,11 +26,10 @@ class ChannelManager:
     def __iter__(self):
         for value in self.__dict__.values():
             if isinstance(Channel, value):
-                yield channel
+                yield value
 
     def add(self, channel):
-        setattr(self, channel.name, channel)
+        setattr(self, channel._name, channel)
 
     def drop(self, channel_name: str):
         delattr(self, channel_name)
-

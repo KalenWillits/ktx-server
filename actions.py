@@ -2,10 +2,10 @@
 
 class Action:
     def __init__(self):
-        self.name = self.__class__.__name__
+        self._name = self.__class__.__name__
 
     def response(self, data: dict, channels: list):
-        return {self.name: data}, channels
+        return {self._name: data}, channels
 
     def execute(self, **kwargs):
         data = {}
@@ -24,7 +24,7 @@ class ActionManager:
         self.__actions__ = {}
         for action in actions:
             action_instance = action()
-            self.__actions__[action_instance.name] = action_instance
+            self.__actions__[action_instance._name] = action_instance
 
     def __getitem__(self, key):
         return self.__actions__.get(key)

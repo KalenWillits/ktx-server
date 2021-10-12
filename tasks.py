@@ -9,8 +9,6 @@ class TaskTypes(Enum):
 
 
 class BaseTask:
-    complete: bool = False
-
     def __init__(self):
         self._name = self.__class__.__name__
         self._type = next(iter(self.__class__.__bases__)).__name__

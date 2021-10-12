@@ -126,7 +126,7 @@ class Server:
     def broadcast(self, payload: json, channels: list):
         self.log(f"[BROADCAST] {payload} on channels {channels}")
         for channel_name in channels:
-            for subscriber_pk in self.channels[channel_name].subscribers:
+            for subscriber_pk in self.channels[channel_name]._subscribers:
                 asyncio.ensure_future(self.clients[subscriber_pk].send(payload))
 
     async def register(self, websocket):
@@ -162,7 +162,7 @@ class Server:
                                 channels.update(action_channels)
 
                             except Exception as error:
-                                errors["Errors"].append(error)
+                                errors["Errors"].append(str(error))
 
                         else:
                             await websocket.send(json.dumps({"Errors": [f"No action [{action_name}]"]}))
