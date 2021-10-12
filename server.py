@@ -11,6 +11,7 @@ from .channels import ChannelManager
 from .models import ModelManager
 from .actions import ActionManager
 from .tasks import TaskManager
+from .headers import HeaderManager
 from .database import Database
 
 
@@ -47,6 +48,7 @@ class Server:
         models: ModelManager = ModelManager(),
         actions: ActionManager = ActionManager(),
         tasks: TaskManager = TaskManager(),
+        headers: HeaderManager = HeaderManager(),
     ):
         self.host = host
         self.port = port
@@ -105,10 +107,10 @@ class Server:
 
     def handle_headers(self, websocket_headers, websocket=None) -> bool:
         header_results = []
-        for header, function in self.headers.items():
-            delivered_header_value = websocket_headers.get(header)
-            header_function_result = function(
-                delivered_header_value,
+        for header in self.headers:
+            value = websocket_headers.get(header)
+            header_function_result = header.execute(
+                value,
                 db=db,
                 models=self.models,
                 channels=self.channels,
@@ -119,7 +121,7 @@ class Server:
             header_results.append(header_function_result)
 
             if not header_function_result:
-                self.log(f"[HEADER-FUNCTION-FAILED] Header: {header}, Value: {delivered_header_value}")
+                self.log(f"[HEADER-FUNCTION-FAILED] Header: {header}, Value: {value}")
 
         return self.gate(header_results)
 
