@@ -110,6 +110,9 @@ class Server:
         for header in self.headers:
             try:
                 kwargs = json.loads(websocket_headers.get(header._name))
+                if not kwargs:
+                    continue
+
                 header_function_result = header.execute(
                     db=db,
                     models=self.models,

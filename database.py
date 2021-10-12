@@ -54,7 +54,7 @@ class Database:
 
         return False
 
-    def create(self, model_name, **kwargs) -> pd.DataFrame:
+    def create(self, model_name, **kwargs) -> Model:
         instance = self.models[model_name](**kwargs)
         df = instance._to_df()
 
@@ -62,7 +62,7 @@ class Database:
             self[model_name] = self[model_name].append(df, ignore_index=True)
         else:
             self[model_name] = df
-        return df
+        return instance
 
     def query(self, model_name: str, **kwargs) -> pd.DataFrame:
         if self.has(model_name):
