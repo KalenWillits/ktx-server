@@ -10,4 +10,4 @@ from .schema import Schema
 from .string_to_file import string_to_file
 from .to_snake import to_snake
 from .object import Object
-from .get_server_time import get_server_time
+from .server_time import ServerTime

@@ -103,7 +103,6 @@ class Server:
         self.log(f"[UNTRUSTED-SOURCE-DENIED] {websocket.remote_address}")
         return False
 
-
     def handle_headers(self, websocket_headers, websocket=None) -> bool:
         header_results = []
         for header, function in self.headers.items():
@@ -153,11 +152,11 @@ class Server:
                         if action := self.actions[action_name]:
                             try:
                                 data, action_channels = action.execute(
-                                websocket=websocket,
-                                server=self,
-                                db=self.db,
-                                channels=self.channels,
-                                **query.get(action_name))
+                                    websocket=websocket,
+                                    server=self,
+                                    db=self.db,
+                                    channels=self.channels,
+                                    **query.get(action_name))
 
                                 response.update(data)
                                 channels.update(action_channels)
@@ -166,7 +165,7 @@ class Server:
                                 errors["Errors"].append(error)
 
                         else:
-                            await websocket.send(json.dumps({"Errors":[f"No action [{action_name}]"]}))
+                            await websocket.send(json.dumps({"Errors": [f"No action [{action_name}]"]}))
 
                     if errors["Errors"]:
                         response.update(errors)
@@ -197,34 +196,38 @@ class Server:
             try:
                 self.log(f"[STARTING] {self.host}:{self.port}")
                 self.db.load()
-                self.tasks.execute_startup_tasks(db=self.db,
-                                                 models=self.models,
-                                                 tasks=self.tasks,
-                                                 actions=self.actions,
-                                                 channels=self.channels,
-                                                 server=self)
+                asyncio.get_event_loop().run_until_complete(
+                    self.tasks.execute_startup_tasks(
+                        db=self.db,
+                        models=self.models,
+                        tasks=self.tasks,
+                        actions=self.actions,
+                        channels=self.channels,
+                        server=self))
 
                 asyncio.get_event_loop().run_until_complete(init_function())
-                asyncio.get_event_loop().run_until_complete(self.tasks.execute_interval_tasks(
-                                                            db=self.db,
-                                                            models=self.models,
-                                                            tasks=self.tasks,
-                                                            actions=self.actions,
-                                                            channels=self.channels,
-                                                            server=self)
-                                                            )
+                asyncio.get_event_loop().run_until_complete(
+                    self.tasks.execute_interval_tasks(
+                        db=self.db,
+                        models=self.models,
+                        tasks=self.tasks,
+                        actions=self.actions,
+                        channels=self.channels,
+                        server=self))
 
                 asyncio.get_event_loop().run_forever()
             except KeyboardInterrupt:
                 self.log("[SHUTDOWN]")
             finally:
                 self.log("[CLEANUP-TASKS-STARTED]")
-                self.tasks.execute_shutdown_tasks(db=self.db,
-                                                 models=self.models,
-                                                 tasks=self.tasks,
-                                                 actions=self.actions,
-                                                 channels=self.channels,
-                                                 server=self)
+                asyncio.get_event_loop().run_until_complete(
+                    self.tasks.execute_shutdown_tasks(
+                        db=self.db,
+                        models=self.models,
+                        tasks=self.tasks,
+                        actions=self.actions,
+                        channels=self.channels,
+                        server=self))
 
                 self.db.save()
                 self.log("[CLEANUP-TASKS-COMPLETE]")

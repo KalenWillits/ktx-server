@@ -2,11 +2,9 @@ from datetime import datetime
 import pytz
 
 
-
-
 class ServerTime:
     def __init__(self, datetime_string: str, timezone: str = "UTC"):
-        self.datetime = convertdatetime(datetime.strptime(datetime_string, "%Y-%m-%d %H:%M:%S"))
+        self.datetime = self.convert_datetime(datetime.strptime(datetime_string, "%Y-%m-%d %H:%M:%S.%f"))
         self.year = self.datetime.year
         self.month = self.datetime.month
         self.week = self.datetime.week

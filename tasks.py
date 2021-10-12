@@ -1,8 +1,5 @@
 import asyncio
 from enum import Enum
-from datetime import datetime, timedelta
-
-from utils import Object, ServerTime
 
 
 class TaskTypes(Enum):
@@ -16,15 +13,14 @@ class BaseTask:
 
     def __init__(self):
         self._name = self.__class__.__name__
-        self._type = super().__name__
+        self._type = next(iter(self.__class__.__bases__)).__name__
 
     def completed(self):
         self.complete = True
 
 
 class Startup(BaseTask):
-    def __init__(self, priority: int = None):
-        self.priority = priority
+    priority = None
 
     async def execute(self, **kwargs):
         "Overwrite this method to create custom tasks."
@@ -38,7 +34,6 @@ class Interval(BaseTask):
         as an integer.
         """
         raise Exception(f"[ERROR] Task {self._name} set method not implimented")
-
 
     async def execute(self, **kwargs):
         "Overwrite this method to create custom tasks."
@@ -64,35 +59,34 @@ class TaskManager:
         self._types = TaskTypes
 
         self.__tasks__ = {
-            TaskTypes.STARTUP: [],
-            TaskTypes.INTERVAL: [],
-            TaskTypes.SHUTDOWN: [],
+            TaskTypes.STARTUP.value: [],
+            TaskTypes.INTERVAL.value: [],
+            TaskTypes.SHUTDOWN.value: [],
         }
 
         for task in tasks:
             task_instance = task()
             self.__tasks__[task_instance._type].append(task_instance)
 
-        self.sort_tasks(TaskTypes.STARTUP)
-        self.sort_tasks(TaskTypes.SHUTDOWN)
+        self.sort_tasks(TaskTypes.STARTUP.value)
+        self.sort_tasks(TaskTypes.SHUTDOWN.value)
 
     def sort_tasks(self, type: str):
         self.__tasks__[type].sort(key=lambda task: task.priority if task.priority else len(self.__tasks__[type]))
 
-    def execute_startup_tasks(self, **kwargs):
-        for task in self.__tasks__[TaskTypes.STARTUP]:
+    async def execute_startup_tasks(self, **kwargs):
+        for task in self.__tasks__[TaskTypes.STARTUP.value]:
             asyncio.ensure_future(task.execute(**kwargs))
 
     async def execute_interval_tasks(self, **kwargs):
         while True:
-            for task in self.__tasks__[TaskTypes.INTERVAL]:
-                asyncio.sleep(task.set(**kwargs))
-                await task.execute(**kwargs)
+            for task in self.__tasks__[TaskTypes.INTERVAL.value]:
+                await asyncio.sleep(task.set(**kwargs))
+                asyncio.ensure_future(task.execute(**kwargs))
 
-            if not self.__tasks__[TaskTypes.INTERVAL]:
+            if not self.__tasks__[TaskTypes.INTERVAL.value]:
                 break
 
-
-    def execute_shutdown_tasks(self, **kwargs):
-        for task in self.__tasks__[TaskTypes.SHUTDOWN]:
+    async def execute_shutdown_tasks(self, **kwargs):
+        for task in self.__tasks__[TaskTypes.SHUTDOWN.value]:
             asyncio.ensure_future(task.execute(**kwargs))
