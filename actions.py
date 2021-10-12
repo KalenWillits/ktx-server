@@ -4,18 +4,18 @@ class Action:
     def __init__(self):
         self._name = self.__class__.__name__
 
-    def response(self, data: dict, channels: list):
+    def response(self, data, channels: list):
         return {self._name: data}, channels
 
     def execute(self, **kwargs):
         data = {}
         channels = []
-        """
+        '''
         Overwrite this method to create a custom action.
 
         :: return :: dict, [...channel_names]
-        """
-        raise Exception("Action - Execute method not implimented.")
+        '''
+        raise Exception('Action - Execute method not implimented.')
         return self.response(data, channels)
 
 

@@ -10,7 +10,8 @@ class HeaderManager:
     def __init__(self, *headers):
         self.__headers__ = {}
         for header in headers:
-            self.__headers__[header._name] = header()
+            header_instance = header()
+            self.__headers__[header_instance._name] = header_instance
 
     def __getitem__(self, header_name: str):
         return self.__headers__[header_name]

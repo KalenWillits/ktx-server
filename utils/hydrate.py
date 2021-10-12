@@ -1,5 +1,5 @@
 import inspect
-from .to_snake import to_snake
+from typing import Set
 
 
 def hydrate(model, df, db):
@@ -10,16 +10,16 @@ def hydrate(model, df, db):
         for field, dtype, default_value in model()._schema.items():
             if '__' in field:
                 continue
-            if dtype is set:
-                result[field] = list()
+            if dtype is Set:
+                result[field] = []
 
             if inspect.isclass(default_value):
-                if db.has(to_snake(default_value.__name__)):
-                    foreign_key_df = db[to_snake(default_value.__name__)]
+                if db.has(default_value.__name__):
+                    foreign_key_df = db[default_value.__name__]
                     if key := result.get(field):
                         foreign_keys = [key]
                     else:
-                        foreign_keys = list()
+                        foreign_keys = []
                     foreign_key_df_filtered = foreign_key_df[foreign_key_df.pk.isin(foreign_keys)]
                     if not foreign_key_df_filtered.empty:
                         result[field] = next(hydrate(default_value, foreign_key_df_filtered, db))
@@ -28,19 +28,23 @@ def hydrate(model, df, db):
 
             elif isinstance(default_value, (list, set)):
                 default_value = next(iter(default_value))
-                if db.has(to_snake(default_value.__name__)):
-                    foreign_key_df = db[to_snake(default_value.__name__)]
-                    foreign_keys = result.get(field, list())
+                if db.has(default_value.__name__):
+                    foreign_key_df = db[default_value.__name__]
+                    foreign_keys = result.get(field, [])
                     foreign_key_df_filtered = foreign_key_df[foreign_key_df.pk.isin(foreign_keys)]
                     if not foreign_key_df_filtered.empty:
                         result[field] = hydrate(default_value, foreign_key_df_filtered, db)
                     else:
-                        result[field] = list()
+                        result[field] = []
 
             elif isinstance(default_value, bool):
                 if result[field]:
                     result[field] = True
                 else:
                     result[field] = False
+
+            elif isinstance(default_value, None):
+                if not result[field]:
+                    result[field] = None
 
         yield result

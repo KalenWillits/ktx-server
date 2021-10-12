@@ -107,20 +107,21 @@ class Server:
     def handle_headers(self, websocket_headers, websocket=None) -> bool:
         header_results = []
         for header in self.headers:
-            data = json.loads(websocket_headers.get(header))
+            kwargs = json.loads(websocket_headers.get(header))
             header_function_result = header.execute(
-                data=data,
                 db=db,
                 models=self.models,
                 channels=self.channels,
                 tasks=self.tasks,
                 actions=self.actions,
                 server=self,
-                websocket=websocket)
+                websocket=websocket,
+                **kwargs,
+            )
             header_results.append(header_function_result)
 
             if not header_function_result:
-                self.log(f"[HEADER-FAILED] Header: {header._name}, Value: {data}")
+                self.log(f"[HEADER-FAILED] {header._name}:{kwargs}")
 
         return self.gate(header_results)
 
