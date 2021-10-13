@@ -104,17 +104,19 @@ class Server:
         self.log(f'[UNTRUSTED-SOURCE-DENIED] {websocket.remote_address}')
         return False
 
+
     def handle_headers(self, websocket_headers, websocket=None) -> bool:
         header_results = []
         errors = {'Errors': []}
         for header in self.headers:
-            try:
 
-                kwargs_json = websocket_headers.get(header._name)
-                if not kwargs_json:
-                    continue
+            kwargs_json = websocket_headers.get(header._name)
+            if not kwargs_json:
+                kwargs = {}
+            else:
                 kwargs = json.loads(kwargs_json)
 
+            if self.debug:
                 header_function_result = header.execute(
                     db=db,
                     models=self.models,
@@ -127,11 +129,28 @@ class Server:
                 )
                 header_results.append(header_function_result)
 
-                if not header_function_result:
-                    self.log(f'[HEADER-FAILED] {header._name}:{kwargs}')
-            except Exception as error:
-                self.log(f'[ERROR] {str(error)}')
-                errors['Errors'].append(str(error))
+            else:
+                try:
+                    header_function_result = header.execute(
+                        db=db,
+                        models=self.models,
+                        channels=self.channels,
+                        tasks=self.tasks,
+                        actions=self.actions,
+                        server=self,
+                        websocket=websocket,
+                        **kwargs,
+                    )
+                    header_results.append(header_function_result)
+
+                    if not header_function_result:
+                        self.log(f'[HEADER-CHECK-FAILED] {header._name}:{kwargs}')
+
+                except Exception:
+                    errors['Errors'].append('Error in header processing')
+
+
+
 
         if errors['Errors']:
             asyncio.ensure_future(websocket.send(json.dumps(errors)))
@@ -166,19 +185,31 @@ class Server:
                     query = json.loads(payload)
                     for action_name in query.keys():
                         if action := self.actions[action_name]:
-                            try:
-                                data, action_channels = action.execute(
-                                    websocket=websocket,
-                                    server=self,
-                                    db=self.db,
-                                    channels=self.channels,
-                                    **query.get(action_name))
+                            if self.debug:
+                                    data, action_channels = action.execute(
+                                        websocket=websocket,
+                                        server=self,
+                                        db=self.db,
+                                        channels=self.channels,
+                                        **query.get(action_name))
 
-                                response.update(data)
-                                channels.update(action_channels)
+                                    response.update(data)
+                                    channels.update(action_channels)
 
-                            except Exception as error:
-                                errors['Errors'].append(str(error))
+                            else:
+                                try:
+                                    data, action_channels = action.execute(
+                                        websocket=websocket,
+                                        server=self,
+                                        db=self.db,
+                                        channels=self.channels,
+                                        **query.get(action_name))
+
+                                    response.update(data)
+                                    channels.update(action_channels)
+                                except Exception:
+                                    errors['Errors'].append('Unable to complete action')
+
 
                         else:
                             await websocket.send(json.dumps({'Errors': [f'No action [{action_name}]']}))

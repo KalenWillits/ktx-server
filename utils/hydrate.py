@@ -43,7 +43,7 @@ def hydrate(model, df, db):
                 else:
                     result[field] = False
 
-            elif isinstance(default_value, None):
+            elif default_value is None:
                 if not result[field]:
                     result[field] = None
 
