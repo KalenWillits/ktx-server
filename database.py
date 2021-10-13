@@ -41,6 +41,7 @@ class Database:
         return self.__dict__[key]
 
     def __repr__(self):
+        # TODO: Refactor to create a schema diagram including types
         output = "<object 'Database'>"
         for model in self.models:
             shape = self[model.__name__].shape

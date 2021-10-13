@@ -26,8 +26,8 @@ column_filters = {
     'eq': lambda df, column, value: df[df[column] == value],  # equals
     'gt': lambda df, column, value: df[df[column] > value],  # greater than
     'lt': lambda df, column, value: df[df[column] < value],  # less than
-    'gte': lambda df, column, value: df[df[column] >= value],  # greater than or equal to
-    'lte': lambda df, column, value: df[df[column] <= value],  # less than or equal to
+    'ge': lambda df, column, value: df[df[column] >= value],  # greater than or equal to
+    'le': lambda df, column, value: df[df[column] <= value],  # less than or equal to
     'max': lambda df, column, value: df[df[column] == df[column].max()],  # maximum (value is unused)
     'min': lambda df, column, value: df[df[column] == df[column].min()],  # minnimum (value is unused)
     'in': lambda df, column, value: df[df[column].isin(value)],  # Find all values that are in a list
