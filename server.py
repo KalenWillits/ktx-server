@@ -109,9 +109,11 @@ class Server:
         errors = {'Errors': []}
         for header in self.headers:
             try:
-                kwargs = json.loads(websocket_headers.get(header._name))
-                if not kwargs:
+
+                kwargs_json = websocket_headers.get(header._name)
+                if not kwargs_json:
                     continue
+                kwargs = json.loads(kwargs_json)
 
                 header_function_result = header.execute(
                     db=db,
