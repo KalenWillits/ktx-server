@@ -1,5 +1,4 @@
 from uuid import uuid4
-import inspect
 import pandas as pd
 from .utils import to_snake, Schema, hydrate
 
@@ -19,13 +18,14 @@ class Model:
 
     def __init__(self, *args, **kwargs):
         self._schema = Schema(self)
+        self._name = self.__class__.__name__
         self.__dict__.update(self._schema.values)
         for key, value in kwargs.items():
             setattr(self, key, value)
 
     @property
     def _snake_name(self) -> str:
-        return to_snake(self.__class__.__name__)
+        return to_snake(self._name)
 
     def __setitem__(self, key, value):
         setattr(self, key, value)
@@ -39,7 +39,7 @@ class Model:
         return hydrate(self.__class__, df, db)
 
     def _to_dict(self) -> dict:
-        instance_values = dict()
+        instance_values = {}
         for field, dtype, default_value in self._schema.items():
             instance_values[field] = self[field]
 
@@ -52,11 +52,12 @@ class Model:
     def __repr__(self):
         return self._to_df().to_string()
 
+
 class ModelManager:
-    def __init__(self, models: list):
+    def __init__(self, *models):
         self.__models__ = models
         for model in models:
-            self.__dict__[model.__name__] = model
+            setattr(self, model.__name__, model)
 
     def __iter__(self):
         for model in self.__models__:

@@ -1,11 +1,13 @@
 import asyncio
 import json
+from uuid import uuid4
 
 import websockets
 import argparse
 
 from websockets.exceptions import ConnectionClosedError
 
+from .channels import ChannelManager
 from .models import ModelManager
 from .actions import ActionManager
 from .tasks import TaskManager
@@ -38,17 +40,18 @@ class Server:
         debug: bool = True,
         db: Database = None,
         data: str = "/",
-        trust: list = ["*"],
-        headers: dict = dict(),
-        gate=any,
-        models: ModelManager = ModelManager([]),
-        actions: ActionManager = ActionManager([]),
-        tasks: TaskManager = TaskManager([]),
+        trust: list = [],
+        headers: dict = {},
+        gate=all,
+        channels: ChannelManager = ChannelManager(),
+        models: ModelManager = ModelManager(),
+        actions: ActionManager = ActionManager(),
+        tasks: TaskManager = TaskManager(),
     ):
         self.host = host
         self.port = port
         self.debug = debug
-        self.clients = dict()
+        self.clients = {}
 
         if hasattr(self, "db"):
             self.db = db
@@ -58,6 +61,7 @@ class Server:
         self.tasks = tasks
         self.models = models
         self.actions = actions
+        self.channels = channels
         self.trust = trust
         self.headers = headers
         self.gate = gate
@@ -80,6 +84,8 @@ class Server:
         models = self.models
         global actions
         actions = self.actions
+        global channels
+        channels = self.channels
         global tasks
         tasks = self.tasks
 
@@ -91,23 +97,25 @@ class Server:
         return lambda: embed()
 
     def check_if_trusted(self, websocket) -> bool:
-        if websocket.remote_address[0] in self.trust or "*" in self.trust:
+        if websocket.remote_address[0] in self.trust or not self.trust:
             return True
 
         self.log(f"[UNTRUSTED-SOURCE-DENIED] {websocket.remote_address}")
         return False
 
-    # def state_event(self, websocket):
-        # payload = get_snapshot(self.clients[websocket], self.db)
-        # if payload:
-        #     self.log(f"[NOTIFY-EVENT] {websocket.remote_address}")
-        #     return json.dumps(payload)
-
     def handle_headers(self, websocket_headers, websocket=None) -> bool:
-        header_results = list()
+        header_results = []
         for header, function in self.headers.items():
             delivered_header_value = websocket_headers.get(header)
-            header_function_result = function(delivered_header_value, db=db, server=self, websocket=websocket)
+            header_function_result = function(
+                delivered_header_value,
+                db=db,
+                models=self.models,
+                channels=self.channels,
+                tasks=self.tasks,
+                actions=self.actions,
+                server=self,
+                websocket=websocket)
             header_results.append(header_function_result)
 
             if not header_function_result:
@@ -115,43 +123,54 @@ class Server:
 
         return self.gate(header_results)
 
-    async def notify_state(self, response):
-        self.log(f"[NOTIFY STATE] {response}")
-        if self.clients:
-            payload = json.dumps(response)
-            if payload:
-                for client in self.clients.keys():
-                    await client.send(payload)
-
-    def broadcast(self, response):
-        asyncio.ensure_future(self.notify_state(response))
+    def broadcast(self, payload: json, channels: list):
+        self.log(f"[BROADCAST] {payload} on channels {channels}")
+        for channel_name in channels:
+            for subscriber_pk in self.channels[channel_name]._subscribers:
+                asyncio.ensure_future(self.clients[subscriber_pk].send(payload))
 
     async def register(self, websocket):
         self.log(f"[REGISTER-NEW-CONNECTION] {websocket.remote_address}")
-        self.clients[websocket] = dict()
+        websocket.pk = str(uuid4())
+        self.clients[websocket.pk] = websocket
 
     async def unregister(self, websocket):
         self.log(f"[UNREGISTER-CLOSE-CONNECTION] {websocket.remote_address}")
-        del self.clients[websocket]
+        del self.clients[websocket.pk]
 
     async def handle(self, websocket, host):
         self.log(f"[HANDLE-CONNECTION] {websocket.remote_address}")
-
         if self.check_if_trusted(websocket) and self.handle_headers(websocket.request_headers, websocket=websocket):
             await self.register(websocket)
             try:
-                # if event_payload := self.state_event(websocket):
-                #     await websocket.send(event_payload)
                 async for payload in websocket:
-                    data = json.loads(payload)
-                    for action_name in data.keys():
-                        if response := self.actions[action_name].execute(
-                            websocket=websocket,
-                            server=self,
-                            db=self.db,
-                            **data.get(action_name)
-                        ):
-                            await self.notify_state(response)
+                    response = {}
+                    channels = set()
+                    errors = {"Errors": []}
+                    query = json.loads(payload)
+                    for action_name in query.keys():
+                        if action := self.actions[action_name]:
+                            try:
+                                data, action_channels = action.execute(
+                                    websocket=websocket,
+                                    server=self,
+                                    db=self.db,
+                                    channels=self.channels,
+                                    **query.get(action_name))
+
+                                response.update(data)
+                                channels.update(action_channels)
+
+                            except Exception as error:
+                                errors["Errors"].append(str(error))
+
+                        else:
+                            await websocket.send(json.dumps({"Errors": [f"No action [{action_name}]"]}))
+
+                    if errors["Errors"]:
+                        response.update(errors)
+
+                    self.broadcast(json.dumps(response), list(channels))
 
             except ConnectionClosedError:
                 self.log(f"[CONNECTION CLOSED] {websocket.remote_address}")
@@ -177,18 +196,39 @@ class Server:
             try:
                 self.log(f"[STARTING] {self.host}:{self.port}")
                 self.db.load()
-                self.tasks.execute_startup_tasks(db=self.db, models=self.models, server=self)
+                asyncio.get_event_loop().run_until_complete(
+                    self.tasks.execute_startup_tasks(
+                        db=self.db,
+                        models=self.models,
+                        tasks=self.tasks,
+                        actions=self.actions,
+                        channels=self.channels,
+                        server=self))
 
                 asyncio.get_event_loop().run_until_complete(init_function())
-                asyncio.get_event_loop().run_until_complete(self.tasks.execute_periodic_tasks(
-                                                            db=self.db, server=self)
-                                                            )
+                asyncio.get_event_loop().run_until_complete(
+                    self.tasks.execute_interval_tasks(
+                        db=self.db,
+                        models=self.models,
+                        tasks=self.tasks,
+                        actions=self.actions,
+                        channels=self.channels,
+                        server=self))
+
                 asyncio.get_event_loop().run_forever()
             except KeyboardInterrupt:
                 self.log("[SHUTDOWN]")
             finally:
                 self.log("[CLEANUP-TASKS-STARTED]")
-                self.tasks.execute_shutdown_tasks(db=self.db, models=self.models, server=self)
+                asyncio.get_event_loop().run_until_complete(
+                    self.tasks.execute_shutdown_tasks(
+                        db=self.db,
+                        models=self.models,
+                        tasks=self.tasks,
+                        actions=self.actions,
+                        channels=self.channels,
+                        server=self))
+
                 self.db.save()
                 self.log("[CLEANUP-TASKS-COMPLETE]")
         else:

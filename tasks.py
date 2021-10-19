@@ -1,45 +1,90 @@
 import asyncio
+from enum import Enum
+
+
+class TaskTypes(Enum):
+    STARTUP = "Startup"
+    INTERVAL = "Interval"
+    SHUTDOWN = "Shutdown"
+
+
+class BaseTask:
+    def __init__(self):
+        self._name = self.__class__.__name__
+        self._type = next(iter(self.__class__.__bases__)).__name__
+
+    def completed(self):
+        self.complete = True
+
+
+class Startup(BaseTask):
+    priority = None
+
+    async def execute(self, **kwargs):
+        "Overwrite this method to create custom tasks."
+        raise Exception(f"[ERROR] Task {self.__class__.__name__} execute method not implimented")
+
+
+class Interval(BaseTask):
+    def set(self, **kwargs) -> int:
+        """
+        Overwrite this function to return the interval of time between task executions in seconds
+        as an integer.
+        """
+        raise Exception(f"[ERROR] Task {self._name} set method not implimented")
+
+    async def execute(self, **kwargs):
+        "Overwrite this method to create custom tasks."
+        raise Exception(f"[ERROR] Task {self.__class__.__name__} execute method not implimented")
+
+
+class Shutdown(BaseTask):
+    priority = None
+
+    async def execute(self, **kwargs):
+        "Overwrite this method to create custom tasks."
+        raise Exception(f"[ERROR] Task {self.__class__.__name__} execute method not implimented")
+
 
 class Task:
-    type = None
-
-    def execute(*args, **kwargs):
-        '''
-        Overwrite this method to create custom tasks.
-        Tasks in startup and shutdown are syncronous tasks,
-        tasks in loop are asyncronous.
-        '''
-        raise Exception("Task - execute method not implimented")
+    Startup = Startup
+    Interval = Interval
+    Shutdown = Shutdown
 
 
 class TaskManager:
-    def __init__(self, tasks: list = list()):
-        self.startup_queue = list()
-        self.loop_queue = list()
-        self.shutdown_queue = list()
+    def __init__(self, *tasks: BaseTask):
+        self._types = TaskTypes
+
+        self.__tasks__ = {
+            TaskTypes.STARTUP.value: [],
+            TaskTypes.INTERVAL.value: [],
+            TaskTypes.SHUTDOWN.value: [],
+        }
 
         for task in tasks:
-            if task.type == 'startup':
-                self.startup_queue.append(task)
-            elif task.type == 'periodic':
-                self.loop_queue.append(task)
-            elif task.type == 'shutdown':
-                self.shutdown_queue.append(task)
-            else:
-                raise Exception(f'{task.type} is an invalid task type. task type is required.')
+            task_instance = task()
+            self.__tasks__[task_instance._type].append(task_instance)
 
-    def execute_startup_tasks(self, **kwargs):
-        for task in self.startup_queue:
-            task.execute(**kwargs)
+        self.sort_tasks(TaskTypes.STARTUP.value)
+        self.sort_tasks(TaskTypes.SHUTDOWN.value)
 
-    async def execute_periodic_tasks(self, **kwargs):
+    def sort_tasks(self, type: str):
+        self.__tasks__[type].sort(key=lambda task: task.priority if task.priority else len(self.__tasks__[type]))
+
+    async def execute_startup_tasks(self, **kwargs):
+        for task in self.__tasks__[TaskTypes.STARTUP.value]:
+            asyncio.ensure_future(task.execute(**kwargs))
+
+    async def execute_interval_tasks(self, **kwargs):
         while True:
-            for task in self.loop_queue:
-                await task.execute(**kwargs)
+            for task in self.__tasks__[TaskTypes.INTERVAL.value]:
+                await asyncio.sleep(task.set(**kwargs))
+                asyncio.ensure_future(task.execute(**kwargs))
 
-            if not self.loop_queue:
+            if not self.__tasks__[TaskTypes.INTERVAL.value]:
                 break
 
-    def execute_shutdown_tasks(self, **kwargs):
-        for task in self.shutdown_queue:
-            task.execute(**kwargs)
+    async def execute_shutdown_tasks(self, **kwargs):
+        for task in self.__tasks__[TaskTypes.SHUTDOWN.value]:
+            asyncio.ensure_future(task.execute(**kwargs))
