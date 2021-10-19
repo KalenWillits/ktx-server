@@ -29,13 +29,19 @@ written to disk in csv files. One csv for each DataFrame. Server interaction is 
 actions, tasks, and channels. 
 	- Models are class representations of tables in the database. Class names define the name of the table, and
 	  static attributes define each field. fields can also be defined by properties by using the property method.
+
+	- Models are class representations of tables in the database. Class names define the name of the table, and
+	  static attributes define each field. fields can also be defined by properties by using the property method.
+	  
 	- Actions are how clients can interact with the server. Each action will have an *execute* method. This method
 	  will run when a registered websocket client calls it by name. The action will return a reponse payload and
 	  a list of channels to broadcast on. If there are no channels to broadcast on there will be no response
 	  returned. Actions are also required to allow clients to subscribe to channels.
+	  
 	- Tasks are automated server behaviors that can run at startup, shutdown, and in defined intervals. Intervals
 	  can be defined dynammically by using the *set* method. This method should return the interval in seconds
 	  as an integer. Task *execute* methods are asyncronous.
+	  
 	- Channels are the control gate for clients recieving information from an action response. At least one channel
  	  and one subscribe action is required for server communication to occur. Clients can be in as many or no 
 	  channels, however each client can only be in any channel once. 
@@ -49,4 +55,6 @@ actions, tasks, and channels.
 	- Interaction with the database requires some knowledge with pandas. However, there are some helper functions
 	  for most simple operations. The database is passed as `db` and is a base class with each table as an 
 	  attribute. Each table is a pandas DataFrame.
+	
+	  
 	

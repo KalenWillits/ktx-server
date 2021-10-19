@@ -5,12 +5,13 @@ import os
 
 from .utils import (
     is_datetime,
-    is_numeric,
     file_to_string,
     string_to_file,
     handle_sort,
     handle_limit,
     column_filters,
+    parse_list,
+    parse_set,
 )
 
 from .models import ModelManager, Model
@@ -40,6 +41,7 @@ class Database:
         return self.__dict__[key]
 
     def __repr__(self):
+        # TODO: Refactor to create a schema diagram including types
         output = "<object 'Database'>"
         for model in self.models:
             shape = self[model.__name__].shape
@@ -53,7 +55,7 @@ class Database:
 
         return False
 
-    def create(self, model_name, **kwargs) -> pd.DataFrame:
+    def create(self, model_name, **kwargs) -> Model:
         instance = self.models[model_name](**kwargs)
         df = instance._to_df()
 
@@ -61,7 +63,7 @@ class Database:
             self[model_name] = self[model_name].append(df, ignore_index=True)
         else:
             self[model_name] = df
-        return df
+        return instance
 
     def query(self, model_name: str, **kwargs) -> pd.DataFrame:
         if self.has(model_name):
@@ -132,21 +134,25 @@ class Database:
                     dtypes = get_type_hints(model)
                     for field in self[name].columns:
                         if dtype := dtypes.get(field):
-                            if dtype == set:
-                                for index, set_value in enumerate(self[name][field].values):
-                                    self[name][field].iloc[index] = set(
-                                        (is_numeric(
-                                            num
-                                        ) and int(num) for num in set_value.replace(
-                                            '{', '').replace('}', '').split(',')))
+                            if hasattr(dtype, '__origin__'):
+                                if dtype.__origin__ is set:
+                                    inner_dtype = dtype.__args__[0]
+                                    for index, set_string in enumerate(self[name][field].values):
+                                        self[name][field][index] = parse_set(set_string)
 
-                            elif dtype == list:
-                                for index, set_value in enumerate(self[name][field].values):
-                                    self[name][field].iloc[index] = list(
-                                        (is_numeric(
-                                            num
-                                        ) and int(num) for num in set_value.replace(
-                                            '[', '').replace(']', '').split(',')))
+                                        if inner_dtype is int or inner_dtype is float:
+                                            self[name][field].iloc[index].apply(
+                                                lambda parsed_set: {inner_dtype(value) for value in parsed_set})
+
+                                elif dtype.__origin__ is list:
+                                    inner_dtype = dtype.__args__[0]
+                                    for index, list_string in enumerate(self[name][field].values):
+                                        self[name][field][index] = parse_list(list_string)
+
+                                        if inner_dtype is int or inner_dtype is float:
+                                            self[name][field].iloc[index].apply(
+                                                lambda parsed_list: [inner_dtype(value) for value in parsed_list])
+
                             else:
                                 self[name][field].astype(dtype)
 
