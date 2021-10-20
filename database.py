@@ -95,12 +95,8 @@ class Database:
         else:
             return pd.DataFrame()
 
-<<<<<<< HEAD
     def get(self, model_name, pk: str = None):
         assert pk, "Missing primary key kwarg. "
-=======
-    def get(self, model_name: str, pk: str) -> Model:
->>>>>>> 4718c6a691d27ce796986bb00b624dbe7f1dd848
         df = self.query(model_name, pk=pk)
         if not df.empty:
             return self.models[model_name](**df.iloc[0].to_dict())
