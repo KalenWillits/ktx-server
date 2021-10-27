@@ -3,7 +3,7 @@ from typing import Set
 
 
 def hydrate(model, df, db):
-    'Takes the Pandas DataFrame values and generates model instances.'
+    'Takes the Pandas DataFrame values and generates fully populated dictionaries based on the selected model FKs.'
     for i in range(df.shape[0]):
         result = df.iloc[i].to_dict()
 
