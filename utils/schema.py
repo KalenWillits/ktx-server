@@ -53,6 +53,7 @@ class Schema:
 
         return dtypes_dict
 
+
     def items(self):
         '''
         Returns the table schema from a model.
@@ -72,6 +73,12 @@ class Schema:
             value = getattr(self.instance.__class__, attribute)
 
             if isinstance(value, property):
-                value = dtype_to_default_value(dtypes.get(attribute))
+
+                # Allows default values to be set on properties.
+                if hasattr(self.instance.__class__, f'_{attribute}'):
+                    value = getattr(self.instance.__class__, f'_{attribute}')
+
+                else:
+                    value = dtype_to_default_value(dtypes.get(attribute))
 
             yield attribute, dtypes.get(attribute), value
