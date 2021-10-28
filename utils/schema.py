@@ -1,5 +1,5 @@
 import inspect
-from typing import get_type_hints, List, Set
+from typing import get_type_hints
 from .dtype_to_default_value import dtype_to_default_value
 
 
@@ -8,20 +8,21 @@ class Schema:
         self.instance = instance
         self.values = dict()
 
-        for attribute in dir(self.instance):
-            if '__' in attribute:
-                continue
+        for attribute in get_type_hints(self.instance).keys():
             if attribute[0] == '_':
                 continue
 
-            if inspect.isclass(getattr(self.instance.__class__, attribute)):
-                self.values[attribute] = None
-            elif isinstance(getattr(self.instance.__class__, attribute), set):
-                self.values[attribute] = set()
-            elif isinstance(getattr(self.instance.__class__, attribute), list):
-                self.values[attribute] = list()
+            if hasattr(self.instance, attribute):
+                if inspect.isclass(getattr(self.instance.__class__, attribute)):
+                    self.values[attribute] = None
+                elif isinstance(getattr(self.instance.__class__, attribute), set):
+                    self.values[attribute] = set()
+                elif isinstance(getattr(self.instance.__class__, attribute), list):
+                    self.values[attribute] = list()
+                else:
+                    self.values[attribute] = getattr(self.instance.__class__, attribute)
             else:
-                self.values[attribute] = getattr(self.instance.__class__, attribute)
+                self.values[attribute] = None
 
     def __setitem__(self, key, value):
         self._[key] = value
@@ -53,7 +54,6 @@ class Schema:
                         f'Type hint requirement not met on {self.instance.__class__.__name__}.{attribute_name}')
 
         return dtypes_dict
-
 
     def items(self):
         '''
