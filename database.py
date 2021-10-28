@@ -5,8 +5,6 @@ import os
 
 from .utils import (
     is_datetime,
-    file_to_string,
-    string_to_file,
     handle_sort,
     handle_limit,
     column_filters,
@@ -21,17 +19,13 @@ pd.options.mode.chained_assignment = None
 
 class Database:
 
-    def __init__(self, models: ModelManager = ModelManager(), path: str = '', asset_models: tuple = ()):
+    def __init__(self, models: ModelManager = ModelManager(), path: str = ''):
         '''
         Simple in-memory database built with pandas to store data in ram.
         This is a "Pandas Database".
-
-       Asset models is a tuple of models that have a "file" attribute. The file attribute should be a byte string
-       of a file asset. Such as a photo or audio file.
         '''
         self.models = models
         self.path = path
-        self.asset_models = asset_models
         self.load()
 
     def __setitem__(self, key, value):
@@ -154,14 +148,8 @@ class Database:
     def save(self):
         for model in self.models:
             if name := model.__name__:
-                if issubclass(model, self.asset_models):
-                    for file, file_name in zip(self[name]['file'].values, self[name]['file_name']):
-                        string_to_file(file, os.path.join(self.path, file_name))
-
                 if hasattr(self, name):
                     columns = list(self[name].columns)
-                    if 'file' in columns:
-                        columns.remove('file')
                     self[name].to_csv(os.path.join(self.path, f'{name}.csv'), columns=columns, index=False)
 
     def load(self):
@@ -171,7 +159,4 @@ class Database:
                 if os.path.isfile(os.path.join(self.path, f'{name}.csv')):
                     self[name] = pd.read_csv(os.path.join(self.path, f'{name}.csv'))
 
-                if issubclass(model, self.asset_models):
-                    self[name]['file'] = self[name]['file_name'].apply(
-                        lambda file_name: file_to_string(os.path.join(self.path, file_name)))
         self.audit_iter_types()

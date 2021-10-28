@@ -104,7 +104,6 @@ class Server:
         self.log(f'[UNTRUSTED-SOURCE-DENIED] {websocket.remote_address}')
         return False
 
-
     def handle_headers(self, websocket_headers, websocket=None) -> bool:
         header_results = []
         errors = {'Errors': []}
@@ -149,9 +148,6 @@ class Server:
                 except Exception:
                     errors['Errors'].append('Error in header processing')
 
-
-
-
         if errors['Errors']:
             asyncio.ensure_future(websocket.send(json.dumps(errors)))
 
@@ -186,15 +182,15 @@ class Server:
                     for action_name in query.keys():
                         if action := self.actions[action_name]:
                             if self.debug:
-                                    data, action_channels = action.execute(
-                                        websocket=websocket,
-                                        server=self,
-                                        db=self.db,
-                                        channels=self.channels,
-                                        **query.get(action_name))
+                                data, action_channels = action.execute(
+                                    websocket=websocket,
+                                    server=self,
+                                    db=self.db,
+                                    channels=self.channels,
+                                    **query.get(action_name))
 
-                                    response.update(data)
-                                    channels.update(action_channels)
+                                response.update(data)
+                                channels.update(action_channels)
 
                             else:
                                 try:

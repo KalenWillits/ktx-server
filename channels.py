@@ -26,7 +26,7 @@ class ChannelManager:
 
     def __iter__(self):
         for channel in self.__channels__.values():
-                yield channel
+            yield channel
 
     def add(self, channel: Channel):
         self.__channels__[channel._name] = channel
