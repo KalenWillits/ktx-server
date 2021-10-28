@@ -44,14 +44,16 @@ class Schema:
             if attribute_name[0] == '_':
                 continue
 
-            attribute_value = getattr(self.instance.__class__, attribute_name)
-            if hasattr(attribute_value, 'fget'):
-                attribute_dtype = get_type_hints(attribute_value.fget)
-                try:
-                    dtypes_dict.update({attribute_name: attribute_dtype['return']})
-                except KeyError:
-                    raise Exception(
-                        f'Type hint requirement not met on {self.instance.__class__.__name__}.{attribute_name}')
+            # Gathering and formatting dtypes for properties
+            if hasattr(self.instance.__class__, attribute_name):
+                attribute_value = getattr(self.instance.__class__, attribute_name)
+                if hasattr(attribute_value, 'fget'):
+                    attribute_dtype = get_type_hints(attribute_value.fget)
+                    try:
+                        dtypes_dict.update({attribute_name: attribute_dtype['return']})
+                    except KeyError:
+                        raise Exception(
+                            f'Type hint requirement not met on {self.instance.__class__.__name__}.{attribute_name}')
 
         return dtypes_dict
 
@@ -71,7 +73,10 @@ class Schema:
             if attribute[0] == '_':
                 continue
 
-            value = getattr(self.instance.__class__, attribute)
+            if hasattr(self.instance.__class__, attribute):
+                value = getattr(self.instance.__class__, attribute)
+            else:
+                value = None
 
             if isinstance(value, property):
 
