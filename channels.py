@@ -33,3 +33,8 @@ class ChannelManager:
 
     def drop(self, channel_name: str):
         del self.__channels__[channel_name]
+
+    def unregister(self, subscriber_pk: str):
+        for channel in self:
+            if subscriber_pk in channel._subscribers:
+                channel.unsubscribe(subscriber_pk)

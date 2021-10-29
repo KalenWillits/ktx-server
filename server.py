@@ -36,6 +36,7 @@ class Server:
     '''
     def __init__(
         self,
+        protocol: str = 'ws',
         host: str = 'localhost',
         port: int = 5000,
         debug: bool = True,
@@ -157,7 +158,8 @@ class Server:
         self.log(f'[BROADCAST] {payload} on channels {channels}')
         for channel_name in channels:
             for subscriber_pk in self.channels[channel_name]._subscribers:
-                asyncio.ensure_future(self.clients[subscriber_pk].send(payload))
+                if subscriber_pk in self.clients.keys():
+                    asyncio.ensure_future(self.clients[subscriber_pk].send(payload))
 
     async def register(self, websocket):
         self.log(f'[REGISTER-NEW-CONNECTION] {websocket.remote_address}')
@@ -166,6 +168,7 @@ class Server:
     async def unregister(self, websocket):
         self.log(f'[UNREGISTER-CLOSE-CONNECTION] {websocket.remote_address}')
         del self.clients[websocket.pk]
+        self.channels.unregister(websocket.pk)
 
     async def handle(self, websocket, host):
         self.log(f'[HANDLE-CONNECTION] {websocket.remote_address}')
