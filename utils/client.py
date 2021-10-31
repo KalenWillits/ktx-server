@@ -2,36 +2,33 @@ import asyncio
 import aioconsole
 import websockets
 import argparse
-import json
 import sys
+
+from .is_valid_json import is_valid_json
 
 
 class Sender:
-    def __init__(self, url: str, commands: dict = {}, headers: dict = {}, actions: dict = {}):
+    def __init__(self, url: str, commands: dict = {}, headers: dict = {}):
         self.url = url
-        self.cmd = None
-        self.actions = actions
+        self.json_string = None
         self.headers = headers
 
     async def gather_input(self):
-        self.cmd = await aioconsole.ainput(":")
+        self.json_string = await aioconsole.ainput(":")
 
     async def handle_input(self, websocket):
         await self.gather_input()
         await self.parse_and_send(websocket)
 
     async def parse_and_send(self, websocket):
-        if data := self.actions.get(self.cmd):
-            await aioconsole.aprint(f'[SENDER] {data}')
-            await websocket.send(json.dumps(data))
+        if is_valid_json(self.json_string):
+            await aioconsole.aprint('[SENDER]', self.json_string)
+            await websocket.send(self.json_string)
 
     async def connect(self):
-        try:
-            async with websockets.connect(self.url, extra_headers=self.headers) as websocket:
-                while True:
-                    await self.handle_input(websocket)
-        except Exception:
-            await aioconsole.aprint('[RECIEVER] Connection closed.')
+        async with websockets.connect(self.url, extra_headers=self.headers) as websocket:
+            while True:
+                await self.handle_input(websocket)
 
     async def run(self):
         try:
@@ -50,12 +47,9 @@ class Reciever:
         self.previous_data = None
 
     async def connect(self):
-        try:
-            async with websockets.connect(self.url, extra_headers=self.headers) as websocket:
-                while True:
-                    asyncio.ensure_future(aioconsole.aprint(f'[RECIEVER] {await websocket.recv()}'))
-        except Exception:
-            await aioconsole.aprint('[RECIEVER] Connection closed.')
+        async with websockets.connect(self.url, extra_headers=self.headers) as websocket:
+            while True:
+                asyncio.ensure_future(aioconsole.aprint('[RECIEVER]', await websocket.recv()))
 
     async def run(self):
         try:
@@ -68,13 +62,13 @@ class Reciever:
 
 
 class Client:
-    def __init__(self, protocol='ws', host='localhost', port=5000, commands={}, headers={}, actions={}):
+    def __init__(self, protocol='ws', host='localhost', port=5000, commands={}, headers={}):
         self.protocol = protocol
         self.host = host
         self.port = port
         self.commands = commands
         self.headers = headers
-        self.sender = Sender(f'{protocol}://{host}:{port}', commands=commands, headers=headers, actions=actions)
+        self.sender = Sender(f'{protocol}://{host}:{port}', commands=commands, headers=headers)
         self.reciever = Reciever(f'{protocol}://{host}:{port}', headers=headers)
 
     async def run_sender(self):
