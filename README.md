@@ -23,7 +23,7 @@ Usage: `python main.py run`
 
 
 ### Abstract 
-Leviathan is a websocket server framework written in Python designed to handle small and medium sized data sets. 
+Augur is a websocket server framework written in Python designed to handle small and medium sized data sets. 
 The database is powered by Pandas and lives in memory at run time. When a server shutdown event occurs, the data is 
 written to disk in csv files. One csv for each DataFrame. Server interaction is made from four building blocks. Models, 
 actions, tasks, and channels. 
