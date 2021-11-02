@@ -7,14 +7,14 @@ Backend Websocket server for simple db access using websocket connects for top p
 ```
 # main.py
 
-from augur import Database, Server, ModelManager, ActionManager, TaskManager, ChannelManager
+from augur import Database, Server, ModelManager, ActionManager, TaskManager, ChannelManager, HeaderManager
 
 models = ModelManager()
 actions = ActionManager()
 tasks = TaskManager()
 channels = ChannelManager()
 
-server = Server(models=models, tasks=tasks, actions=actions, path="data/")
+server = Server(protocol='ws', host='localhost', port=5000, models=models, tasks=tasks, actions=actions, headers=headers, channels=channels, data="data/", trust=[])
 
 if __name__ == "__main__":
     server.run()
