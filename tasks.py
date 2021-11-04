@@ -1,11 +1,12 @@
 import asyncio
+import time
 from enum import Enum
 
 
 class TaskTypes(Enum):
-    STARTUP = "Startup"
-    INTERVAL = "Interval"
-    SHUTDOWN = "Shutdown"
+    STARTUP = 'Startup'
+    INTERVAL = 'Interval'
+    SHUTDOWN = 'Shutdown'
 
 
 class BaseTask:
@@ -13,37 +14,39 @@ class BaseTask:
         self._name = self.__class__.__name__
         self._type = next(iter(self.__class__.__bases__)).__name__
 
-    def completed(self):
-        self.complete = True
-
 
 class Startup(BaseTask):
     priority = None
 
+    def delay(self, **kwargs):
+        '''Overwrite this method to add a delay before executing the startup task.
+        this will also delay subsequent tasks from starting.'''
+        return 0
+
     async def execute(self, **kwargs):
-        "Overwrite this method to create custom tasks."
-        raise Exception(f"[ERROR] Task {self.__class__.__name__} execute method not implimented")
+        'Overwrite this method to create custom tasks.'
+        raise Exception(f'[ERROR] Task {self.__class__.__name__} execute method not implimented')
 
 
 class Interval(BaseTask):
-    def set(self, **kwargs) -> int:
-        """
+    def timer(self, **kwargs) -> int:
+        '''
         Overwrite this function to return the interval of time between task executions in seconds
         as an integer.
-        """
-        raise Exception(f"[ERROR] Task {self._name} set method not implimented")
+        '''
+        raise Exception(f'[ERROR] Task {self._name} timer method not implimented')
 
     async def execute(self, **kwargs):
-        "Overwrite this method to create custom tasks."
-        raise Exception(f"[ERROR] Task {self.__class__.__name__} execute method not implimented")
+        'Overwrite this method to create custom tasks.'
+        raise Exception(f'[ERROR] Task {self.__class__.__name__} execute method not implimented')
 
 
 class Shutdown(BaseTask):
     priority = None
 
     async def execute(self, **kwargs):
-        "Overwrite this method to create custom tasks."
-        raise Exception(f"[ERROR] Task {self.__class__.__name__} execute method not implimented")
+        'Overwrite this method to create custom tasks.'
+        raise Exception(f'[ERROR] Task {self.__class__.__name__} execute method not implimented')
 
 
 class Task:
@@ -72,19 +75,22 @@ class TaskManager:
     def sort_tasks(self, type: str):
         self.__tasks__[type].sort(key=lambda task: task.priority if task.priority else len(self.__tasks__[type]))
 
-    async def execute_startup_tasks(self, **kwargs):
+    def execute_startup_tasks(self, **kwargs):
         for task in self.__tasks__[TaskTypes.STARTUP.value]:
             asyncio.ensure_future(task.execute(**kwargs))
 
+    async def schedule_task(self, task, **kwargs):
+        await asyncio.sleep(task.timer())
+        await task.execute(**kwargs)
+        self.__tasks__[TaskTypes.INTERVAL.value].append(task)
+
     async def execute_interval_tasks(self, **kwargs):
         while True:
-            for task in self.__tasks__[TaskTypes.INTERVAL.value]:
-                await asyncio.sleep(task.set(**kwargs))
-                asyncio.ensure_future(task.execute(**kwargs))
+            await asyncio.sleep(0.1)
+            if self.__tasks__[TaskTypes.INTERVAL.value]:
+                task = self.__tasks__[TaskTypes.INTERVAL.value].pop()
+                asyncio.ensure_future(self.schedule_task(task, **kwargs))
 
-            if not self.__tasks__[TaskTypes.INTERVAL.value]:
-                break
-
-    async def execute_shutdown_tasks(self, **kwargs):
+    def execute_shutdown_tasks(self, **kwargs):
         for task in self.__tasks__[TaskTypes.SHUTDOWN.value]:
             asyncio.ensure_future(task.execute(**kwargs))
