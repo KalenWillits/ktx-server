@@ -1,4 +1,4 @@
-# augur
+# leviathan
 Backend Websocket server for simple db access using websocket connects for top performance. 
 
 
@@ -7,7 +7,7 @@ Backend Websocket server for simple db access using websocket connects for top p
 ```
 # main.py
 
-from augur import Database, Server, ModelManager, ActionManager, TaskManager, ChannelManager, HeaderManager
+from leviathan import Database, Server, ModelManager, ActionManager, TaskManager, ChannelManager, HeaderManager
 
 models = ModelManager()
 actions = ActionManager()
