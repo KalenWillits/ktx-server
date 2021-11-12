@@ -80,7 +80,7 @@ class TaskManager:
             asyncio.ensure_future(task.execute(**kwargs))
 
     async def schedule_task(self, task, **kwargs):
-        await asyncio.sleep(task.timer())
+        await asyncio.sleep(task.timer(**kwargs))
         await task.execute(**kwargs)
         self.__tasks__[TaskTypes.INTERVAL.value].append(task)
 
