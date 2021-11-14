@@ -1,6 +1,7 @@
 import asyncio
 import json
 from uuid import uuid4
+from datetime import datetime
 
 import websockets
 import argparse
@@ -75,7 +76,7 @@ class Server:
 
     def log(self, *args):
         if self.debug:
-            print(*args)
+            print(str(datetime.now()), *args)
 
     def run_default(self):
         return lambda: websockets.serve(self.handle, self.host, self.port)
@@ -214,7 +215,6 @@ class Server:
                                 except Exception:
                                     errors['Errors'].append('Unable to complete action')
 
-
                         else:
                             await websocket.send(json.dumps({'Errors': [f'No action [{action_name}]']}))
 
@@ -247,14 +247,13 @@ class Server:
             try:
                 self.log(f'[STARTING] {self.host}:{self.port}')
                 self.db.load()
-                asyncio.get_event_loop().run_until_complete(
-                    self.tasks.execute_startup_tasks(
-                        db=self.db,
-                        models=self.models,
-                        tasks=self.tasks,
-                        actions=self.actions,
-                        channels=self.channels,
-                        server=self))
+                self.tasks.execute_startup_tasks(
+                    db=self.db,
+                    models=self.models,
+                    tasks=self.tasks,
+                    actions=self.actions,
+                    channels=self.channels,
+                    server=self)
 
                 asyncio.get_event_loop().run_until_complete(init_function())
                 asyncio.get_event_loop().run_until_complete(
@@ -271,14 +270,13 @@ class Server:
                 self.log('[SHUTDOWN]')
             finally:
                 self.log('[CLEANUP-TASKS-STARTED]')
-                asyncio.get_event_loop().run_until_complete(
-                    self.tasks.execute_shutdown_tasks(
-                        db=self.db,
-                        models=self.models,
-                        tasks=self.tasks,
-                        actions=self.actions,
-                        channels=self.channels,
-                        server=self))
+                self.tasks.execute_shutdown_tasks(
+                    db=self.db,
+                    models=self.models,
+                    tasks=self.tasks,
+                    actions=self.actions,
+                    channels=self.channels,
+                    server=self)
 
                 self.db.save()
                 self.log('[CLEANUP-TASKS-COMPLETE]')

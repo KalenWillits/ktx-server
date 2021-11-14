@@ -7,14 +7,14 @@ Backend Websocket server for simple db access using websocket connects for top p
 ```
 # main.py
 
-from leviathan import Database, Server, ModelManager, ActionManager, TaskManager, ChannelManager
+from leviathan import Database, Server, ModelManager, ActionManager, TaskManager, ChannelManager, HeaderManager
 
 models = ModelManager()
 actions = ActionManager()
 tasks = TaskManager()
 channels = ChannelManager()
 
-server = Server(models=models, tasks=tasks, actions=actions, path="data/")
+server = Server(protocol='ws', host='localhost', port=5000, models=models, tasks=tasks, actions=actions, headers=headers, channels=channels, data="data/", trust=[])
 
 if __name__ == "__main__":
     server.run()
@@ -23,7 +23,7 @@ Usage: `python main.py run`
 
 
 ### Abstract 
-Leviathan is a websocket server framework written in Python designed to handle small and medium sized data sets. 
+Augur is a websocket server framework written in Python designed to handle small and medium sized data sets. 
 The database is powered by Pandas and lives in memory at run time. When a server shutdown event occurs, the data is 
 written to disk in csv files. One csv for each DataFrame. Server interaction is made from four building blocks. Models, 
 actions, tasks, and channels. 
