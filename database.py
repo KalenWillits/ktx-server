@@ -79,6 +79,7 @@ class Database:
                         value = pd.to_datetime(value, utc=True)
                         df[column] = pd.to_datetime(df[column])
 
+                    # FK lookup.
                     if inspect.isclass(fk_model := getattr(self.models[model_name], column)):
                         fk_df = self.query(fk_model.__name__, **{operator: value}).pk
                         temp_column_suffix = f'_{uuid4()}'
@@ -86,6 +87,7 @@ class Database:
                                       suffixes=(None, temp_column_suffix))
                         df.drop(f'pk{temp_column_suffix}', inplace=True, axis=1)
 
+                    # Special filters
                     else:
                         df = column_filters[operator](df, column, value)
 
