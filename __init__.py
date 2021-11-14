@@ -5,4 +5,3 @@ from .headers import HeaderManager, Header
 from .models import ModelManager, Model
 from .server import Server
 from .tasks import TaskManager, Task
-from .client import Client

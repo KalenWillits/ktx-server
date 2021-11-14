@@ -13,6 +13,7 @@ from .actions import ActionManager
 from .tasks import TaskManager
 from .headers import HeaderManager
 from .database import Database
+from .utils import is_valid_json
 
 
 class Server:
@@ -108,16 +109,19 @@ class Server:
     def handle_headers(self, websocket_headers, websocket=None) -> bool:
         header_results = []
         errors = {'Errors': []}
+        args = []
+        kwargs = {}
         for header in self.headers:
 
-            kwargs_json = websocket_headers.get(header._name)
-            if not kwargs_json:
-                kwargs = {}
+            data_string = websocket_headers.get(header._name)
+            if is_valid_json(data_string):
+                kwargs = json.loads(data_string)
             else:
-                kwargs = json.loads(kwargs_json)
+                args = [data_string]
 
             if self.debug:
                 header_function_result = header.execute(
+                    *args,
                     db=db,
                     models=self.models,
                     channels=self.channels,
@@ -132,6 +136,7 @@ class Server:
             else:
                 try:
                     header_function_result = header.execute(
+                        *args,
                         db=db,
                         models=self.models,
                         channels=self.channels,

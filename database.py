@@ -1,3 +1,5 @@
+from uuid import uuid4
+import inspect
 import pandas as pd
 from typing import get_type_hints
 import pytz
@@ -72,14 +74,20 @@ class Database:
 
                 if '__' in key:
 
-                    column, operator = key.split('__')
+                    column, operator = key.split('__', 1)
                     if is_datetime(value):
-                        value = pd.to_datetime(value)
-                        if not value.tzinfo:
-                            value = pytz.timezone('UTC').localize(value)
+                        value = pd.to_datetime(value, utc=True)
                         df[column] = pd.to_datetime(df[column])
 
-                    df = column_filters[operator](df, column, value)
+                    if inspect.isclass(fk_model := getattr(self.models[model_name], column)):
+                        fk_df = self.query(fk_model.__name__, **{operator: value}).pk
+                        temp_column_suffix = f'_{uuid4()}'
+                        df = pd.merge(left=df, right=fk_df, how='right', left_on=column, right_on='pk',
+                                      suffixes=(None, temp_column_suffix))
+                        df.drop(f'pk{temp_column_suffix}', inplace=True, axis=1)
+
+                    else:
+                        df = column_filters[operator](df, column, value)
 
                     if is_datetime(value):
                         df[column] = df[column].dt.strftime('%Y-%m-%d %H:%M:%S')
