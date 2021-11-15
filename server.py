@@ -14,7 +14,6 @@ from .actions import ActionManager
 from .tasks import TaskManager
 from .headers import HeaderManager
 from .database import Database
-from .utils import is_valid_json
 
 
 class Server:
@@ -114,11 +113,10 @@ class Server:
         kwargs = {}
         for header in self.headers:
 
-            data_string = websocket_headers.get(header._name)
-            if is_valid_json(data_string):
+            if data_string := websocket_headers.get(header._name):
                 kwargs = json.loads(data_string)
             else:
-                args = [data_string]
+                continue
 
             if self.debug:
                 header_function_result = header.execute(

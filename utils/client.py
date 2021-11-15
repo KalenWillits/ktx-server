@@ -4,7 +4,6 @@ import websockets
 import argparse
 import sys
 
-from .is_valid_json import is_valid_json
 
 
 class Sender:
@@ -21,9 +20,8 @@ class Sender:
         await self.parse_and_send(websocket)
 
     async def parse_and_send(self, websocket):
-        if is_valid_json(self.json_string):
-            await aioconsole.aprint('[SENDER]', self.json_string)
-            await websocket.send(self.json_string)
+        await aioconsole.aprint('[SENDER]', self.json_string)
+        await websocket.send(self.json_string)
 
     async def connect(self):
         async with websockets.connect(self.url, extra_headers=self.headers) as websocket:
