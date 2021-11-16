@@ -158,12 +158,12 @@ class Server:
 
         return self.gate(header_results)
 
-    def broadcast(self, payload: json, channels: list):
+    def broadcast(self, payload: dict, channels: list):
         self.log(f'[BROADCAST] {payload} on channels {channels}')
         for channel_name in channels:
             for subscriber_pk in self.channels[channel_name]._subscribers:
                 if subscriber_pk in self.clients.keys():
-                    asyncio.ensure_future(self.clients[subscriber_pk].send(payload))
+                    asyncio.ensure_future(self.clients[subscriber_pk].send(json.dumps(payload)))
 
     async def register(self, websocket):
         self.log(f'[REGISTER-NEW-CONNECTION] {websocket.remote_address}')

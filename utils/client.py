@@ -5,7 +5,6 @@ import argparse
 import sys
 
 
-
 class Sender:
     def __init__(self, url: str, commands: dict = {}, headers: dict = {}):
         self.url = url

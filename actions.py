@@ -1,5 +1,4 @@
 
-
 class Action:
     def __init__(self):
         self._name = self.__class__.__name__

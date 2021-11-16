@@ -1,8 +1,7 @@
-from uuid import uuid4
+from uuid import uuid4, UUID
 import inspect
 import pandas as pd
 from typing import get_type_hints
-import pytz
 import os
 
 from .utils import (
@@ -153,6 +152,8 @@ class Database:
                                                 lambda parsed_list: [inner_dtype(value) for value in parsed_list])
 
                             else:
+                                if dtype is UUID:
+                                    dtype = str
                                 self[name][field].astype(dtype)
 
     def save(self):
