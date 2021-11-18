@@ -1,5 +1,3 @@
-
-
 class Channel:
     def __init__(self, publishers: set = set(), subscribers: set = set(), name: str = None):
         self._subscribers = subscribers

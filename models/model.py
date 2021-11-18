@@ -1,11 +1,12 @@
 from uuid import uuid4
 import pandas as pd
-from .utils import to_snake, Schema, hydrate, key_type
+from ..utils import to_snake, Schema, hydrate
+from ..datatypes import primary_key
 
 
 class Model:
     @property
-    def pk(self) -> key_type:
+    def pk(self) -> primary_key:
         if not hasattr(self, '_pk'):
             self._pk = uuid4()
 
@@ -13,9 +14,9 @@ class Model:
 
     @pk.setter
     def pk(self, value):
-        self._pk = key_type(value)
+        self._pk = primary_key(value)
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, **kwargs):
         self._schema = Schema(self)
         self._name = self.__class__.__name__
         self.__dict__.update(self._schema.values)
@@ -39,10 +40,13 @@ class Model:
             df = self._to_df()
         return hydrate(self.__class__, df, db)
 
-    def _to_dict(self) -> dict:
+    def _to_dict(self, encode: bool = True) -> dict:
         instance_values = {}
         for field, datatype in self._schema.datatypes.values():
-            instance_values[field] = datatype.code(self[field])
+            if encode:
+                instance_values[field] = datatype.encode(self[field])
+            else:
+                instance_values[field] = datatype(self[field])
 
         return instance_values
 
