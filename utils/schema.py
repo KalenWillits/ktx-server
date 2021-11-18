@@ -57,7 +57,7 @@ class Schema:
                         dtypes_dict.update({attribute_name: attribute_dtype['return']})
                     except KeyError:
                         raise Exception(
-                            f'Type hint requirement not met on {self.instance.__class__.__name__}.{attribute_name}')
+                            f'DataType hint requirement not met on {self.instance.__class__.__name__}.{attribute_name}')
 
         return dtypes_dict
 

@@ -14,7 +14,7 @@ from .actions import ActionManager
 from .tasks import TaskManager
 from .headers import HeaderManager
 from .database import Database
-from .types import TypesManager
+from .datatypes import DataTypeManager
 
 
 class Server:
@@ -51,7 +51,7 @@ class Server:
         actions: ActionManager = ActionManager(),
         tasks: TaskManager = TaskManager(),
         headers: HeaderManager = HeaderManager(),
-        types: TypesManager = TypesManager(),
+        datatypes: DataTypeManager = DataTypeManager(),
     ):
         self.host = host
         self.port = port
@@ -69,7 +69,7 @@ class Server:
         self.channels = channels
         self.trust = trust
         self.headers = headers
-        self.types = types
+        self.datatypes = datatypes
         self.gate = gate
         self.commands = {
             'run': self.run_default(),

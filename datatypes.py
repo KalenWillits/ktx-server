@@ -1,4 +1,3 @@
-
 class DataType:
     def __init__(self):
         self._name = self.__class__.__name__
@@ -10,7 +9,7 @@ class DataType:
         '''
         Overwrite this function to impliment a type change behavior and use this as type hints on model fields.
         '''
-        raise Exception(f'[ERROR] DataType {self._name} execute method not implimented.')
+        raise Exception(f'[ERROR] DataDataType {self._name} execute method not implimented.')
 
     def encode(self, value, **kwargs):
         '''
@@ -27,18 +26,18 @@ class DataType:
 
 
 class DataTypeManager:
-    def __init__(self, *data_types):
-        self.__data_types__ = {}
-        for data_type in data_types:
-            data_type_instance = data_type()
-            self.__data_types__[data_type._name] = data_type_instance
+    def __init__(self, *datatypes):
+        self.__datatypes__ = {}
+        for datatype in datatypes:
+            datatype_instance = datatype()
+            self.__datatypes__[datatype_instance._name] = datatype_instance
 
-    def __getitem__(self, data_type_name: str):
-        return self.__data_type__[data_type_name]
+    def __getitem__(self, datatype_name: str):
+        return self.__datatype__[datatype_name]
 
-    def __setitem__(self, data_type_name: str, data_type):
-        self.__data_types__[data_type_name] = data_type
+    def __setitem__(self, datatype_name: str, datatype):
+        self.__datatypes__[datatype_name] = datatype
 
     def __iter__(self):
-        for data_type in self.__data_types__.values():
-            yield data_type
+        for datatype in self.__datatypes__.values():
+            yield datatype
