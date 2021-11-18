@@ -1,117 +1,75 @@
-import inspect
+from inspect import isclass
 from typing import get_type_hints
-from .dtype_to_default_value import dtype_to_default_value
 
 
 class Schema:
     def __init__(self, instance):
         self.instance = instance
-        self.values = dict()
+        self.datatypes = {}
+        self.values = {}
 
-        for attribute in get_type_hints(self.instance).keys():
-            if attribute[0] == '_':
+        # Create the datatypes dict off of the base model.
+        for field, datatype in self.build_datatypes_dict().items():
+            if field[0] == '_':
                 continue
 
-            if hasattr(self.instance, attribute):
-                if inspect.isclass(getattr(self.instance.__class__, attribute)):
-                    self.values[attribute] = None
-                elif isinstance(getattr(self.instance.__class__, attribute), set):
-                    self.values[attribute] = set()
-                elif isinstance(getattr(self.instance.__class__, attribute), list):
-                    self.values[attribute] = list()
-                else:
-                    self.values[attribute] = getattr(self.instance.__class__, attribute)
-            else:
-                self.values[attribute] = None
+            self.datatypes[field] = datatype
 
-    def __setitem__(self, key, value):
-        self._[key] = value
+        # Create the default values dict off of the base model.
+        for field, default_value in self.instance.__class__.__dict__.items():
+            if '__' in field:
+                continue
+
+            if field[0] == '_':
+                continue
+
+            if isclass(default_value):
+                default_value = None
+
+            self.values[field] = default_value
 
     def __getitem__(self, key):
-        return self.dtypes()[key]
+        return self.datatypes[key]
 
     def __repr__(self):
-        return f'{self.instance.__class__.__name__}._schema({self.dtypes()})'
+        return f'{self.instance.__class__.__name__}._schema({set(self.items())})'
 
-    def __str__(self):
-        return str(self.dtypes())
-
-    def dtypes(self) -> dict:
+    def build_datatypes_dict(self) -> dict:
         '''
-        Creates a dictionary of field dtypes:
+        This is a required process to merge variables and properties on models and subject them to the
+        same behavior.
+        Creates a dictionary of field datatypes:
             :{[FIELD_NAME]: [DTYPE]}:
         '''
-        dtypes_dict = get_type_hints(self.instance.__class__)
-        for attribute_name in dir(self.instance):
-            if '__' in attribute_name:
+        datatypes_dict = get_type_hints(self.instance.__class__)
+        for field_name in dir(self.instance):
+            if '__' in field_name:
                 continue
-            if attribute_name[0] == '_':
+            if field_name[0] == '_':
                 continue
 
-            # Gathering and formatting dtypes for properties
-            if hasattr(self.instance.__class__, attribute_name):
-                attribute_value = getattr(self.instance.__class__, attribute_name)
-                if hasattr(attribute_value, 'fget'):
-                    attribute_dtype = get_type_hints(attribute_value.fget)
+            # Gathering and formatting datatypes for properties
+            if hasattr(self.instance.__class__, field_name):
+                field_value = getattr(self.instance.__class__, field_name)
+                if hasattr(field_value, 'fget'):
+                    field_datatype = get_type_hints(field_value.fget)
                     try:
-                        dtypes_dict.update({attribute_name: attribute_dtype['return']})
+                        datatypes_dict.update({field_name: field_datatype['return']})
                     except KeyError:
                         raise Exception(
-                            f'DataType hint requirement not met on {self.instance.__class__.__name__}.{attribute_name}')
+                            f'DataType hint requirement not met on {self.instance.__class__.__name__}.{field_name}')
 
-        return dtypes_dict
+        return datatypes_dict
+
+    def fields(self):
+        return self.datatypes.keys()
+
+    def default_values(self):
+        return self.values.values()
+
+    def datatypes(self):
+        return self.datatypes.values()
 
     def items(self):
-        '''
-        Returns the table schema from a model.
-        [
-        ...
-        (NAME, TYPE, VALUE),
-        ...
-        ]
-        '''
-        dtypes = self.dtypes()
-        for attribute in self.keys():
-
-            if hasattr(self.instance.__class__, attribute):
-                value = getattr(self.instance.__class__, attribute)
-            else:
-                value = None
-
-            if isinstance(value, property):
-
-                # Allows default values to be set on properties.
-                if hasattr(self.instance.__class__, f'_{attribute}'):
-                    value = getattr(self.instance.__class__, f'_{attribute}')
-
-                else:
-                    value = dtype_to_default_value(dtypes.get(attribute))
-
-            yield attribute, dtypes.get(attribute), value
-
-    def keys(self):
-        '''
-        Returns field names of the model
-        '''
-        for attribute in dir(self.instance):
-            if '__' in attribute:
-                continue
-            if attribute[0] == '_':
-                continue
-
-            yield attribute
-
-    def values(self):
-        '''
-        Returns default values of the model.
-        '''
-        for attribute in self.keys():
-            if hasattr(self.instance.__class__, attribute):
-                value = getattr(self.instance.__class__, attribute)
-            else:
-                value = None
-
-            yield value
-
-
-
+        for field, datatype, default_value in zip(self.fields(), self.datatypes(), self.default_values()):
+            yield field, datatype, default_value

@@ -1,12 +1,11 @@
-from uuid import uuid4, UUID
+from uuid import uuid4
 import pandas as pd
-from .utils import to_snake, Schema, hydrate
+from .utils import to_snake, Schema, hydrate, key_type
 
 
 class Model:
-
     @property
-    def pk(self) -> UUID:
+    def pk(self) -> key_type:
         if not hasattr(self, '_pk'):
             self._pk = uuid4()
 
@@ -14,12 +13,14 @@ class Model:
 
     @pk.setter
     def pk(self, value):
-        self._pk = UUID(value)
+        self._pk = key_type(value)
 
     def __init__(self, *args, **kwargs):
         self._schema = Schema(self)
         self._name = self.__class__.__name__
         self.__dict__.update(self._schema.values)
+
+        # setattr calls properties as well.
         for key, value in kwargs.items():
             setattr(self, key, value)
 
@@ -40,8 +41,8 @@ class Model:
 
     def _to_dict(self) -> dict:
         instance_values = {}
-        for field, dtype, default_value in self._schema.items():
-            instance_values[field] = self[field]
+        for field, datatype in self._schema.datatypes.values():
+            instance_values[field] = datatype.code(self[field])
 
         return instance_values
 
