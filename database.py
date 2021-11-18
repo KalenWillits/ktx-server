@@ -11,6 +11,7 @@ from .utils import (
     column_filters,
     parse_list,
     parse_set,
+    hydrate,
 )
 
 from .models import ModelManager, Model
@@ -115,6 +116,10 @@ class Database:
         indexes = self.query(model_name, **kwargs).index
         self[model_name].drop(index=indexes, inplace=True)
 
+
+    def hydrate(self, model_name: str, **kwargs):
+        return hydrate(self.models[model_name], self.query(model_name, **kwargs), self)
+
     def init_schema(self):
         for model in self.models:
             if name := model.__name__:
@@ -168,6 +173,12 @@ class Database:
         for model in self.models:
             if name := model.__name__:
                 if os.path.isfile(os.path.join(self.path, f'{name}.csv')):
+                    # instance = model()
                     self[name] = pd.read_csv(os.path.join(self.path, f'{name}.csv'))
+                    # missing_fields = set(instance._schema.keys()).difference(set(self[name].columns))
+                    # for field in missing_fields:
+                    #     default_value = dtype_to_default_value(getattr(model, field))
+                    #     self[name][field] = None
+                    #     self.update(name, self.query(name), **{field: default_value})
 
         self.audit_iter_types()

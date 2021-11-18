@@ -1,15 +1,17 @@
-def dtype_to_default_value(dtype):
-    if dtype == str:
-        return ""
-    elif dtype == int:
+def dtype_to_default_value(value):
+    if isinstance(value, str) or value == str:
+        return ''
+    elif isinstance(value, int) or value == int:
         return 0
-    elif dtype == float:
+    elif isinstance(value, float) or value == float:
         return 0.0
-    elif dtype == list:
-        return list()
-    elif dtype == tuple:
+    elif isinstance(value, list) or value == list:
+        return []
+    elif isinstance(value, tuple) or value == tuple:
         return tuple()
-    elif dtype == dict:
-        return dict()
+    elif isinstance(value, dict) or value == dict:
+        return {}
+    elif isinstance(value, set) or value == set:
+        return set()
     else:
         return None

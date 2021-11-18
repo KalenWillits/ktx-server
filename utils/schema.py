@@ -36,7 +36,11 @@ class Schema:
     def __str__(self):
         return str(self.dtypes())
 
-    def dtypes(self):
+    def dtypes(self) -> dict:
+        '''
+        Creates a dictionary of field dtypes:
+            :{[FIELD_NAME]: [DTYPE]}:
+        '''
         dtypes_dict = get_type_hints(self.instance.__class__)
         for attribute_name in dir(self.instance):
             if '__' in attribute_name:
@@ -67,11 +71,7 @@ class Schema:
         ]
         '''
         dtypes = self.dtypes()
-        for attribute in dir(self.instance):
-            if '__' in attribute:
-                continue
-            if attribute[0] == '_':
-                continue
+        for attribute in self.keys():
 
             if hasattr(self.instance.__class__, attribute):
                 value = getattr(self.instance.__class__, attribute)
@@ -88,3 +88,30 @@ class Schema:
                     value = dtype_to_default_value(dtypes.get(attribute))
 
             yield attribute, dtypes.get(attribute), value
+
+    def keys(self):
+        '''
+        Returns field names of the model
+        '''
+        for attribute in dir(self.instance):
+            if '__' in attribute:
+                continue
+            if attribute[0] == '_':
+                continue
+
+            yield attribute
+
+    def values(self):
+        '''
+        Returns default values of the model.
+        '''
+        for attribute in self.keys():
+            if hasattr(self.instance.__class__, attribute):
+                value = getattr(self.instance.__class__, attribute)
+            else:
+                value = None
+
+            yield value
+
+
+

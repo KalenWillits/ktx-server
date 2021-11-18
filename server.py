@@ -3,6 +3,8 @@ import json
 from uuid import uuid4
 from datetime import datetime
 
+from .types import string
+
 import websockets
 import argparse
 
