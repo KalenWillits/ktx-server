@@ -3,8 +3,6 @@ import json
 from uuid import uuid4
 from datetime import datetime
 
-from .types import string
-
 import websockets
 import argparse
 
@@ -16,6 +14,7 @@ from .actions import ActionManager
 from .tasks import TaskManager
 from .headers import HeaderManager
 from .database import Database
+from .data_types import DataTypesManager
 
 
 class Server:
@@ -52,6 +51,7 @@ class Server:
         actions: ActionManager = ActionManager(),
         tasks: TaskManager = TaskManager(),
         headers: HeaderManager = HeaderManager(),
+        data_types: DataTypesManager = DataTypesManager(),
     ):
         self.host = host
         self.port = port
@@ -69,6 +69,7 @@ class Server:
         self.channels = channels
         self.trust = trust
         self.headers = headers
+        self.data_types = data_types
         self.gate = gate
         self.commands = {
             'run': self.run_default(),

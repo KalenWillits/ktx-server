@@ -116,7 +116,6 @@ class Database:
         indexes = self.query(model_name, **kwargs).index
         self[model_name].drop(index=indexes, inplace=True)
 
-
     def hydrate(self, model_name: str, **kwargs):
         return hydrate(self.models[model_name], self.query(model_name, **kwargs), self)
 
@@ -127,39 +126,37 @@ class Database:
                     empty_df = model()._to_df().iloc[0:0]
                     self[name] = empty_df
 
-    def audit_iter_types(self):
-        '''
-        Changes lists and sets from strings back into lists and sets on load.
-        '''
-        for model in self.models:
-            if name := model.__name__:
-                if self.has(name):
-                    dtypes = get_type_hints(model)
-                    for field in self[name].columns:
-                        if dtype := dtypes.get(field):
-                            if hasattr(dtype, '__origin__'):
-                                if dtype.__origin__ is set:
-                                    inner_dtype = dtype.__args__[0]
-                                    for index, set_string in enumerate(self[name][field].values):
-                                        self[name][field][index] = parse_set(set_string)
+    #     Changes lists and sets from strings back into lists and sets on load.
+    #     '''
+    #     for model in self.models:
+    #         if name := model.__name__:
+    #             if self.has(name):
+    #                 dtypes = get_type_hints(model)
+    #                 for field in self[name].columns:
+    #                     if dtype := dtypes.get(field):
+    #                         if hasattr(dtype, '__origin__'):
+    #                             if dtype.__origin__ is set:
+    #                                 inner_dtype = dtype.__args__[0]
+    #                                 for index, set_string in enumerate(self[name][field].values):
+    #                                     self[name][field][index] = parse_set(set_string)
 
-                                        if inner_dtype is int or inner_dtype is float:
-                                            self[name][field].iloc[index].apply(
-                                                lambda parsed_set: {inner_dtype(value) for value in parsed_set})
+    #                                     if inner_dtype is int or inner_dtype is float:
+    #                                         self[name][field].iloc[index].apply(
+    #                                             lambda parsed_set: {inner_dtype(value) for value in parsed_set})
 
-                                elif dtype.__origin__ is list:
-                                    inner_dtype = dtype.__args__[0]
-                                    for index, list_string in enumerate(self[name][field].values):
-                                        self[name][field][index] = parse_list(list_string)
+    #                             elif dtype.__origin__ is list:
+    #                                 inner_dtype = dtype.__args__[0]
+    #                                 for index, list_string in enumerate(self[name][field].values):
+    #                                     self[name][field][index] = parse_list(list_string)
 
-                                        if inner_dtype is int or inner_dtype is float:
-                                            self[name][field].iloc[index].apply(
-                                                lambda parsed_list: [inner_dtype(value) for value in parsed_list])
+    #                                     if inner_dtype is int or inner_dtype is float:
+    #                                         self[name][field].iloc[index].apply(
+    #                                             lambda parsed_list: [inner_dtype(value) for value in parsed_list])
 
-                            else:
-                                if dtype is UUID:
-                                    dtype = str
-                                self[name][field].astype(dtype)
+    #                         else:
+    #                             if dtype is UUID:
+    #                                 dtype = str
+    #                             self[name][field].astype(dtype)
 
     def save(self):
         for model in self.models:
@@ -181,4 +178,4 @@ class Database:
                     #     self[name][field] = None
                     #     self.update(name, self.query(name), **{field: default_value})
 
-        self.audit_iter_types()
+        # self.audit_iter_types()
