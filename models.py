@@ -1,6 +1,6 @@
 from uuid import uuid4
 import pandas as pd
-from .utils import to_snake, Schema, hydrate
+from .utils import to_snake, Schema
 
 
 class Model:
@@ -32,11 +32,6 @@ class Model:
 
     def __getitem__(self, key):
         return getattr(self, key)
-
-    def _hydrate(self, db, df: pd.DataFrame = None):
-        if not df:
-            df = self._to_df()
-        return hydrate(self.__class__, df, db)
 
     def _to_dict(self) -> dict:
         instance_values = {}
