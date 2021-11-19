@@ -58,3 +58,11 @@ actions, tasks, and channels.
 	
 	  
 	
+
+### Supported Types:
+	- str
+	- int
+	- float
+	- bool
+	- list
+	- set

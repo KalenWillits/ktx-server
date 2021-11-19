@@ -1,4 +1,4 @@
-from uuid import uuid4, UUID
+from uuid import uuid4
 import inspect
 import pandas as pd
 from typing import get_type_hints
@@ -11,6 +11,7 @@ from .utils import (
     column_filters,
     parse_list,
     parse_set,
+    hydrate,
 )
 
 from .models import ModelManager, Model
@@ -115,6 +116,9 @@ class Database:
         indexes = self.query(model_name, **kwargs).index
         self[model_name].drop(index=indexes, inplace=True)
 
+    def hydrate(self, model_name: str, **kwargs):
+        return hydrate(self, model_name, self.query(model_name, **kwargs))
+
     def init_schema(self):
         for model in self.models:
             if name := model.__name__:
@@ -150,11 +154,6 @@ class Database:
                                         if inner_dtype is int or inner_dtype is float:
                                             self[name][field].iloc[index].apply(
                                                 lambda parsed_list: [inner_dtype(value) for value in parsed_list])
-
-                            else:
-                                if dtype is UUID:
-                                    dtype = str
-                                self[name][field].astype(dtype)
 
     def save(self):
         for model in self.models:

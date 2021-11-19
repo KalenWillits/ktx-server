@@ -1,43 +1,55 @@
-import inspect
-from typing import Set
+from inspect import isclass
+import pandas as pd
+
+from .datatypes import INFERED
 
 
-def hydrate(model, df, db):
+def hydrate(db, model_name: str, df: pd.DataFrame):
     'Takes the Pandas DataFrame values and generates fully populated dictionaries based on the selected model FKs.'
-    for i in range(df.shape[0]):
-        result = df.iloc[i].to_dict()
+    model = db.models[model_name]
+    for index in range(df.shape[0]):
+        result = df.iloc[index].to_dict()
 
         for field, dtype, default_value in model()._schema.items():
-            if '__' in field:
-                continue
-            if dtype is Set:
-                result[field] = []
 
-            if inspect.isclass(default_value):
-                if db.has(default_value.__name__):
-                    foreign_key_df = db[default_value.__name__]
-                    if key := result.get(field):
-                        foreign_keys = [key]
-                    else:
-                        foreign_keys = []
-                    foreign_key_df_filtered = foreign_key_df[foreign_key_df.pk.isin(foreign_keys)]
-                    if not foreign_key_df_filtered.empty:
-                        result[field] = next(hydrate(default_value, foreign_key_df_filtered, db))
-                    else:
-                        result[field] = None
+            # FK resolver
+            if default_value in db.models:
+                if foreign_key := result.get(field):
+                    foreign_table = default_value.__name__
+                    foreign_key_df = db.query(foreign_table, pk=foreign_key)
 
-            elif isinstance(default_value, (list, set)):
-                default_value = next(iter(default_value))
-                if db.has(default_value.__name__):
-                    foreign_key_df = db[default_value.__name__]
-                    foreign_keys = result.get(field, [])
-                    foreign_key_df_filtered = foreign_key_df[foreign_key_df.pk.isin(foreign_keys)]
-                    if not foreign_key_df_filtered.empty:
-                        result[field] = hydrate(default_value, foreign_key_df_filtered, db)
-                    else:
-                        result[field] = []
+                if not foreign_key_df.empty:
+                    result[field] = next(hydrate(db, foreign_table, foreign_key_df))
+                else:
+                    result[field] = None
 
-            elif isinstance(default_value, bool):
+            # Iterable fields resolver
+            elif dtype in INFERED:
+                if len(default_value) > 0:
+                    inner_value = next(iter(default_value))
+                    if inner_value in db.models and (len(values := result[field]) > 0):
+                        foreign_table = inner_value.__name__
+                        foreign_key_df = db.query(foreign_table, pk__in=values)
+                        result[field] = [foreign_model for foreign_model in hydrate(db, foreign_table, foreign_key_df)]
+
+                elif values := df[field].iloc[0]:
+
+                    if dtype in (list[bool], set[bool]):
+                        cleaned_bool_values = []
+                        for bool_value in values:
+                            if bool_value:
+                                cleaned_bool_values.append(True)
+                            else:
+                                cleaned_bool_values.append(False)
+                        values = cleaned_bool_values
+
+                    result[field] = values
+
+                else:
+                    result[field] = []
+
+            # Boolean conversion (numpy uses bool64)
+            elif dtype == bool:
                 if result[field]:
                     result[field] = True
                 else:

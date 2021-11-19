@@ -1,90 +1,65 @@
-import inspect
 from typing import get_type_hints
-from .dtype_to_default_value import dtype_to_default_value
 
 
 class Schema:
     def __init__(self, instance):
         self.instance = instance
-        self.values = dict()
-
-        for attribute in get_type_hints(self.instance).keys():
-            if attribute[0] == '_':
-                continue
-
-            if hasattr(self.instance, attribute):
-                if inspect.isclass(getattr(self.instance.__class__, attribute)):
-                    self.values[attribute] = None
-                elif isinstance(getattr(self.instance.__class__, attribute), set):
-                    self.values[attribute] = set()
-                elif isinstance(getattr(self.instance.__class__, attribute), list):
-                    self.values[attribute] = list()
-                else:
-                    self.values[attribute] = getattr(self.instance.__class__, attribute)
-            else:
-                self.values[attribute] = None
-
-    def __setitem__(self, key, value):
-        self._[key] = value
-
-    def __getitem__(self, key):
-        return self.dtypes()[key]
-
-    def __repr__(self):
-        return f'{self.instance.__class__.__name__}._schema({self.dtypes()})'
-
-    def __str__(self):
-        return str(self.dtypes())
 
     def dtypes(self):
         dtypes_dict = get_type_hints(self.instance.__class__)
-        for attribute_name in dir(self.instance):
-            if '__' in attribute_name:
+        for field_name in dir(self.instance):
+            if '__' in field_name:
                 continue
-            if attribute_name[0] == '_':
+            if field_name[0] == '_':
                 continue
 
             # Gathering and formatting dtypes for properties
-            if hasattr(self.instance.__class__, attribute_name):
-                attribute_value = getattr(self.instance.__class__, attribute_name)
-                if hasattr(attribute_value, 'fget'):
-                    attribute_dtype = get_type_hints(attribute_value.fget)
+            if hasattr(self.instance.__class__, field_name):
+                field_value = getattr(self.instance.__class__, field_name)
+                if hasattr(field_value, 'fget'):
+                    field_dtype = get_type_hints(field_value.fget)
                     try:
-                        dtypes_dict.update({attribute_name: attribute_dtype['return']})
+                        dtypes_dict.update({field_name: field_dtype['return']})
                     except KeyError:
                         raise Exception(
-                            f'Type hint requirement not met on {self.instance.__class__.__name__}.{attribute_name}')
+                            f'Type hint requirement not met on {self.instance.__class__.__name__}.{field_name}')
 
         return dtypes_dict
 
-    def items(self):
-        '''
-        Returns the table schema from a model.
-        [
-        ...
-        (NAME, TYPE, VALUE),
-        ...
-        ]
-        '''
-        dtypes = self.dtypes()
-        for attribute in dir(self.instance):
-            if '__' in attribute:
+    def fields(self):
+        for field in dir(self.instance):
+            if '__' in field:
                 continue
-            if attribute[0] == '_':
+            if field[0] == '_':
                 continue
 
-            if hasattr(self.instance.__class__, attribute):
-                value = getattr(self.instance.__class__, attribute)
+            yield field
+
+    def default_values(self) -> dict:
+        dtypes = self.dtypes()
+
+        default_values_dict = {}
+        for field in self.fields():
+            if hasattr(self.instance.__class__, field):
+                value = getattr(self.instance.__class__, field)
             else:
                 value = None
 
             if isinstance(value, property):
 
                 # Allows default values to be set on properties.
-                if hasattr(self.instance.__class__, f'_{attribute}'):
-                    value = getattr(self.instance.__class__, f'_{attribute}')
+                if hasattr(self.instance.__class__, f'_{field}'):
+                    value = getattr(self.instance.__class__, f'_{field}')
 
                 else:
-                    value = dtype_to_default_value(dtypes.get(attribute))
+                    value = dtypes.get(field)()
 
-            yield attribute, dtypes.get(attribute), value
+            default_values_dict[field] = value
+
+        return default_values_dict
+
+    def items(self):
+        dtypes = self.dtypes()
+        default_values = self.default_values()
+        for field in self.fields():
+            yield field, dtypes[field], default_values[field]
