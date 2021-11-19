@@ -67,9 +67,9 @@ class Schema:
     def default_values(self):
         return self.values.values()
 
-    def datatypes(self):
+    def types(self):
         return self.datatypes.values()
 
     def items(self):
-        for field, datatype, default_value in zip(self.fields(), self.datatypes(), self.default_values()):
+        for field, datatype, default_value in zip(self.fields(), self.types(), self.default_values()):
             yield field, datatype, default_value

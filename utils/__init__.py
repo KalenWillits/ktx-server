@@ -15,4 +15,3 @@ from .to_snake import to_snake
 from .parse_headers import parse_headers
 from .client import Client
 from .dtype_to_default_value import dtype_to_default_value
-from .key_type import key_type

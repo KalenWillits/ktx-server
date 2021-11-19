@@ -1,50 +1,18 @@
-import inspect
-from typing import Set
+from ..models import Model
+import pandas as pd
 
 
-def hydrate(model, df, db):
-    'Takes the Pandas DataFrame values and generates fully populated dictionaries based on the selected model FKs.'
-    for i in range(df.shape[0]):
-        result = df.iloc[i].to_dict()
+def hydrate(db, model_name: str, dataframe: pd.DataFrame, encode: bool = False):
+    '''
+    Recursive function to build a dictionary of all values including foreign keys.
+    '''
+    for index in dataframe.index:
+        pk = dataframe.pk.iloc[0]
+        instance = db.get(model_name, pk)
+        result = {}
+        instance_dict = instance._to_dict(encode=encode)
 
-        for field, dtype, default_value in model()._schema.items():
-            if '__' in field:
-                continue
-            if dtype is Set:
-                result[field] = []
-
-            if inspect.isclass(default_value):
-                if db.has(default_value.__name__):
-                    foreign_key_df = db[default_value.__name__]
-                    if key := result.get(field):
-                        foreign_keys = [key]
-                    else:
-                        foreign_keys = []
-                    foreign_key_df_filtered = foreign_key_df[foreign_key_df.pk.isin(foreign_keys)]
-                    if not foreign_key_df_filtered.empty:
-                        result[field] = next(hydrate(default_value, foreign_key_df_filtered, db))
-                    else:
-                        result[field] = None
-
-            elif isinstance(default_value, (list, set)):
-                default_value = next(iter(default_value))
-                if db.has(default_value.__name__):
-                    foreign_key_df = db[default_value.__name__]
-                    foreign_keys = result.get(field, [])
-                    foreign_key_df_filtered = foreign_key_df[foreign_key_df.pk.isin(foreign_keys)]
-                    if not foreign_key_df_filtered.empty:
-                        result[field] = hydrate(default_value, foreign_key_df_filtered, db)
-                    else:
-                        result[field] = []
-
-            elif isinstance(default_value, bool):
-                if result[field]:
-                    result[field] = True
-                else:
-                    result[field] = False
-
-            elif default_value is None:
-                if not result[field]:
-                    result[field] = None
+        for field, datatype, value in zip(instance_dict.keys(), instance._schema.datatypes(), instance_dict.values()):
+            result[field] = datatype.hydrate(value, db, encode=encode)
 
         yield result

@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from .datatypes import DataType
+from .datatype import DataType
 
 
 class PrimaryKey(DataType):
@@ -9,5 +9,3 @@ class PrimaryKey(DataType):
 
     def encode(self, value: UUID) -> str:
         return str(value)
-
-primary_key = PrimaryKey()

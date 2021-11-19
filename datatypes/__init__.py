@@ -1,2 +1,2 @@
-from datatype import DataType
-from .primary_key import primary_key
+from .datatype import DataTypeManager, DataType
+from .primary_key import PrimaryKey
