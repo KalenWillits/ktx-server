@@ -4,7 +4,6 @@ from .utils import to_snake, Schema
 
 
 class Model:
-
     @property
     def pk(self) -> str:
         if not hasattr(self, '_pk'):
@@ -20,8 +19,10 @@ class Model:
         self._schema = Schema(self)
         self._name = self.__class__.__name__
         self.__dict__.update(self._schema.default_values())
-        for key, value in kwargs.items():
-            setattr(self, key, value)
+
+        for field, datatype in self._schema.datatypes().items():
+            if value := kwargs.get(field):
+                setattr(self, field, datatype(value))
 
     @property
     def _snake_name(self) -> str:
