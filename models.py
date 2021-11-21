@@ -46,7 +46,9 @@ class Model:
         return df
 
     def __repr__(self):
-        return self._to_df().to_string()
+        df = self._to_df().transpose()
+        df.columns = [self._name]
+        return df.to_string()
 
 
 class ModelManager:

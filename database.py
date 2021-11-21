@@ -20,7 +20,6 @@ pd.options.mode.chained_assignment = None
 
 
 class Database:
-
     def __init__(self, models: ModelManager = ModelManager(), path: str = ''):
         '''
         Simple in-memory database built with pandas to store data in ram.
@@ -126,34 +125,23 @@ class Database:
                     empty_df = model()._to_df().iloc[0:0]
                     self[name] = empty_df
 
-    def audit_iter_types(self):
-        '''
-        Changes lists and sets from strings back into lists and sets on load.
-        '''
+    def audit_data_types(self):
         for model in self.models:
             if name := model.__name__:
                 if self.has(name):
-                    dtypes = get_type_hints(model)
+                    datatypes = model()._schema.datatypes()
                     for field in self[name].columns:
-                        if dtype := dtypes.get(field):
-                            if hasattr(dtype, '__origin__'):
-                                if dtype.__origin__ is set:
-                                    inner_dtype = dtype.__args__[0]
-                                    for index, set_string in enumerate(self[name][field].values):
-                                        self[name][field][index] = parse_set(set_string)
-
-                                        if inner_dtype is int or inner_dtype is float:
-                                            self[name][field].iloc[index].apply(
-                                                lambda parsed_set: {inner_dtype(value) for value in parsed_set})
-
-                                elif dtype.__origin__ is list:
-                                    inner_dtype = dtype.__args__[0]
+                        if datatype := datatypes.get(field):
+                            if hasattr(datatype, '__origin__'):
+                                if datatype.__origin__ == list:
+                                    inner_datatype = datatype.__args__[0]
                                     for index, list_string in enumerate(self[name][field].values):
                                         self[name][field][index] = parse_list(list_string)
-
-                                        if inner_dtype is int or inner_dtype is float:
+                                        if inner_datatype is int or inner_datatype is float:
                                             self[name][field].iloc[index].apply(
-                                                lambda parsed_list: [inner_dtype(value) for value in parsed_list])
+                                                lambda parsed_list: [inner_datatype(value) for value in parsed_list])
+                            else:
+                                self[name][field].apply(datatype)
 
     def save(self):
         for model in self.models:
@@ -169,4 +157,4 @@ class Database:
                 if os.path.isfile(os.path.join(self.path, f'{name}.csv')):
                     self[name] = pd.read_csv(os.path.join(self.path, f'{name}.csv'))
 
-        self.audit_iter_types()
+        self.audit_data_types()

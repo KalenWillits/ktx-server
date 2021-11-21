@@ -1,7 +1,4 @@
-from inspect import isclass
 import pandas as pd
-
-from .datatypes import INFERED
 
 
 def hydrate(db, model_name: str, df: pd.DataFrame):
@@ -24,7 +21,7 @@ def hydrate(db, model_name: str, df: pd.DataFrame):
                     result[field] = None
 
             # Iterable fields resolver
-            elif dtype in INFERED:
+            elif dtype in (list[str], list[int], list[float], list[bool]):
                 if len(default_value) > 0:
                     inner_value = next(iter(default_value))
                     if inner_value in db.models and (len(values := result[field]) > 0):
@@ -34,7 +31,7 @@ def hydrate(db, model_name: str, df: pd.DataFrame):
 
                 elif values := df[field].iloc[0]:
 
-                    if dtype in (list[bool], set[bool]):
+                    if dtype == list[bool]:
                         cleaned_bool_values = []
                         for bool_value in values:
                             if bool_value:
