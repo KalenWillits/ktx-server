@@ -60,6 +60,10 @@ class Database:
     def query(self, model_name: str, **kwargs) -> pd.DataFrame:
         if self.has(model_name):
             df = self[model_name]
+            keys = list(kwargs.keys())
+            for key in keys:
+                if key not in df.columns:
+                    del kwargs[key]
 
             kwargs, df = handle_sort(kwargs, df)
             kwargs, df = handle_limit(kwargs, df)
