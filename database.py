@@ -132,29 +132,19 @@ class Database:
                     datatypes = model()._schema.datatypes()
                     for field in self[name].columns:
                         if datatype := datatypes.get(field):
-                            if hasattr(datatype, '__origin__'):
-                                if datatype.__origin__ == list:
-                                    inner_datatype = datatype.__args__[0]
-                                    for index, list_string in enumerate(self[name][field].values):
-                                        self[name][field][index] = parse_list(list_string)
-                                        if inner_datatype is int or inner_datatype is float:
-                                            self[name][field].iloc[index].apply(
-                                                lambda parsed_list: [inner_datatype(value) for value in parsed_list])
-                            else:
-                                self[name][field].apply(datatype)
+                            self[name][field].apply(lambda value: datatype(value))
 
     def save(self):
         for model in self.models:
             if name := model.__name__:
                 if hasattr(self, name):
-                    columns = list(self[name].columns)
-                    self[name].to_csv(os.path.join(self.path, f'{name}.csv'), columns=columns, index=False)
+                    self[name].to_json(os.path.join(self.path, f'{name}.json'), orient='records')
 
     def load(self):
         self.init_schema()
         for model in self.models:
             if name := model.__name__:
-                if os.path.isfile(os.path.join(self.path, f'{name}.csv')):
-                    self[name] = pd.read_csv(os.path.join(self.path, f'{name}.csv'))
+                if os.path.isfile(os.path.join(self.path, f'{name}.json')):
+                    self[name] = pd.read_json(os.path.join(self.path, f'{name}.json'))
 
         self.audit_data_types()
