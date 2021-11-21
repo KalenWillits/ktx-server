@@ -190,10 +190,9 @@ class Server:
                         if action := self.actions[action_name]:
                             if self.debug:
                                 data, action_channels = action.execute(
-                                    websocket=websocket,
-                                    server=self,
+                                    ws=websocket,
+                                    sv=self,
                                     db=self.db,
-                                    channels=self.channels,
                                     **query.get(action_name))
 
                                 response.update(data)
@@ -202,10 +201,9 @@ class Server:
                             else:
                                 try:
                                     data, action_channels = action.execute(
-                                        websocket=websocket,
-                                        server=self,
+                                        ws=websocket,
+                                        sv=self,
                                         db=self.db,
-                                        channels=self.channels,
                                         **query.get(action_name))
 
                                     response.update(data)
@@ -247,21 +245,13 @@ class Server:
                 self.db.load()
                 self.tasks.execute_startup_tasks(
                     db=self.db,
-                    models=self.models,
-                    tasks=self.tasks,
-                    actions=self.actions,
-                    channels=self.channels,
-                    server=self)
+                    sv=self)
 
                 asyncio.get_event_loop().run_until_complete(init_function())
                 asyncio.get_event_loop().run_until_complete(
                     self.tasks.execute_interval_tasks(
                         db=self.db,
-                        models=self.models,
-                        tasks=self.tasks,
-                        actions=self.actions,
-                        channels=self.channels,
-                        server=self))
+                        sv=self))
 
                 asyncio.get_event_loop().run_forever()
             except KeyboardInterrupt:
@@ -270,11 +260,7 @@ class Server:
                 self.log('[CLEANUP-TASKS-STARTED]')
                 self.tasks.execute_shutdown_tasks(
                     db=self.db,
-                    models=self.models,
-                    tasks=self.tasks,
-                    actions=self.actions,
-                    channels=self.channels,
-                    server=self)
+                    sv=self)
 
                 self.db.save()
                 self.log('[CLEANUP-TASKS-COMPLETE]')
