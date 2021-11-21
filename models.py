@@ -50,6 +50,9 @@ class Model:
         df.columns = [self._name]
         return df.to_string()
 
+    def __str__(self):
+        return self.__name__
+
 
 class ModelManager:
     def __init__(self, *models):

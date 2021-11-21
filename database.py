@@ -33,11 +33,24 @@ class Database:
         return self.__dict__[key]
 
     def __repr__(self):
-        # TODO: Refactor to create a schema diagram including types
-        output = "<object 'Database'>"
+        terminal_width = os.get_terminal_size().columns
+        header = 'DATABASE'
+        header_margin = int((terminal_width / 2) - (len(header) / 2)) * '_'
+        output = header_margin + header + header_margin
+
         for model in self.models:
             shape = self[model.__name__].shape
-            output += f"\n{model.__name__}(columns: {shape[1]}, rows: {shape[0]})"
+            info = f"{model.__name__}(COLUMNS: {shape[1]}, ROWS: {shape[0]})"
+            info_margin = int((terminal_width / 2) - (len(info) / 2)) * '-'
+
+            output += '\n' + info_margin + info + info_margin
+
+            schema = [{'FIELD': field, 'DATATYPE': datatype, 'DEFAULT': default_value}
+                      for field, datatype, default_value in model()._schema.items()]
+            schema_df = pd.DataFrame(schema)
+            output += schema_df.to_string()
+
+        output += '\n' + '_' * terminal_width
         return output
 
     def has(self, model_name: str) -> bool:

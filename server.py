@@ -41,7 +41,7 @@ class Server:
         host: str = 'localhost',
         port: int = 5000,
         debug: bool = True,
-        db: Database = None,
+        database: Database = None,
         data: str = './',
         trust: list = [],
         gate=all,
@@ -56,10 +56,10 @@ class Server:
         self.debug = debug
         self.clients = {}
 
-        if hasattr(self, 'db'):
-            self.db = db
+        if hasattr(self, 'database'):
+            self.database = database
         else:
-            self.db = Database(models=models, path=data)
+            self.database = Database(models=models, path=data)
 
         self.tasks = tasks
         self.models = models
@@ -82,15 +82,9 @@ class Server:
 
     def run_shell(self):
         global db
-        db = self.db
-        global models
-        models = self.models
-        global actions
-        actions = self.actions
-        global channels
-        channels = self.channels
-        global tasks
-        tasks = self.tasks
+        db = self.database
+        global sv
+        sv = self
 
         from IPython import embed
 
@@ -120,14 +114,9 @@ class Server:
 
             if self.debug:
                 header_function_result = header.execute(
-                    *args,
-                    db=db,
-                    models=self.models,
-                    channels=self.channels,
-                    tasks=self.tasks,
-                    actions=self.actions,
-                    server=self,
-                    websocket=websocket,
+                    db=self.database,
+                    sv=self,
+                    ws=websocket,
                     **kwargs,
                 )
                 header_results.append(header_function_result)
@@ -136,13 +125,9 @@ class Server:
                 try:
                     header_function_result = header.execute(
                         *args,
-                        db=db,
-                        models=self.models,
-                        channels=self.channels,
-                        tasks=self.tasks,
-                        actions=self.actions,
-                        server=self,
-                        websocket=websocket,
+                        db=self.database,
+                        sv=self,
+                        ws=websocket,
                         **kwargs,
                     )
                     header_results.append(header_function_result)
@@ -192,7 +177,7 @@ class Server:
                                 data, action_channels = action.execute(
                                     ws=websocket,
                                     sv=self,
-                                    db=self.db,
+                                    db=self.database,
                                     **query.get(action_name))
 
                                 response.update(data)
@@ -203,7 +188,7 @@ class Server:
                                     data, action_channels = action.execute(
                                         ws=websocket,
                                         sv=self,
-                                        db=self.db,
+                                        db=self.database,
                                         **query.get(action_name))
 
                                     response.update(data)
@@ -244,13 +229,13 @@ class Server:
                 self.log(f'[STARTING] {self.host}:{self.port}')
                 self.db.load()
                 self.tasks.execute_startup_tasks(
-                    db=self.db,
+                    db=self.database,
                     sv=self)
 
                 asyncio.get_event_loop().run_until_complete(init_function())
                 asyncio.get_event_loop().run_until_complete(
                     self.tasks.execute_interval_tasks(
-                        db=self.db,
+                        db=self.database,
                         sv=self))
 
                 asyncio.get_event_loop().run_forever()
@@ -259,7 +244,7 @@ class Server:
             finally:
                 self.log('[CLEANUP-TASKS-STARTED]')
                 self.tasks.execute_shutdown_tasks(
-                    db=self.db,
+                    db=self.database,
                     sv=self)
 
                 self.db.save()
