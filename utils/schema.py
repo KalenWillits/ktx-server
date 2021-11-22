@@ -1,3 +1,4 @@
+from inspect import isclass
 from typing import get_type_hints
 
 
@@ -42,6 +43,14 @@ class Schema:
         for field in self.fields():
             if hasattr(self.instance.__class__, field):
                 value = getattr(self.instance.__class__, field)
+                if isinstance(value, list):
+                    value = next(iter(value))
+                    if isclass(value):
+                        value = []
+
+                if isclass(value):
+                    value = None
+
             else:
                 value = None
 

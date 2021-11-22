@@ -227,7 +227,7 @@ class Server:
         elif init_function := self.commands.get(args.cmd):
             try:
                 self.log(f'[STARTING] {self.host}:{self.port}')
-                self.db.load()
+                self.database.load()
                 self.tasks.execute_startup_tasks(
                     db=self.database,
                     sv=self)
@@ -247,7 +247,7 @@ class Server:
                     db=self.database,
                     sv=self)
 
-                self.db.save()
+                self.database.save()
                 self.log('[CLEANUP-TASKS-COMPLETE]')
         else:
             self.log(f'[ERROR] -- {args.cmd} is not a valid option.')
