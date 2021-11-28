@@ -8,6 +8,7 @@ class Schema:
 
     def datatypes(self):
         datatypes_dict = get_type_hints(self.instance.__class__)
+        datatypes_dict.update(self.instance.__annotations__)
         for field_name in dir(self.instance):
             if '__' in field_name:
                 continue
@@ -28,7 +29,10 @@ class Schema:
         return datatypes_dict
 
     def fields(self):
-        for field in dir(self.instance):
+        fields = dir(self.instance)
+        fields.extend(list(self.instance.__annotations__.keys()))
+
+        for field in fields:
             if '__' in field:
                 continue
             if field[0] == '_':
@@ -44,9 +48,10 @@ class Schema:
             if hasattr(self.instance.__class__, field):
                 value = getattr(self.instance.__class__, field)
                 if isinstance(value, list):
-                    value = next(iter(value))
-                    if isclass(value):
-                        value = []
+                    if len(value) > 0:
+                        value = next(iter(value))
+                        if isclass(value):
+                            value = []
 
                 if isclass(value):
                     value = None

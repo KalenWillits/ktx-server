@@ -146,9 +146,11 @@ class Database:
                     datatypes = model()._schema.datatypes()
                     for field in self[name].columns:
                         if datatype := datatypes.get(field):
-                            self[name][field].apply(lambda value: datatype(value))
+                            self[name][field] = self[name][field].apply(
+                                lambda value: datatype(value) if value else datatype())
 
     def save(self):
+        self.audit_data_types()
         for model in self.models:
             if name := model.__name__:
                 if hasattr(self, name):
@@ -160,5 +162,19 @@ class Database:
             if name := model.__name__:
                 if os.path.isfile(os.path.join(self.path, f'{name}.json')):
                     self[name] = pd.read_json(os.path.join(self.path, f'{name}.json'))
+
+                    # Handle migrations
+                    instance = model()
+                    default_values = instance._schema.default_values()
+                    loaded_fields = set(self[name].columns)
+                    model_fields = set([field for field in instance._schema.fields()])
+                    new_fields = model_fields.difference(loaded_fields)
+                    removed_fields = loaded_fields.difference(model_fields)
+
+                    for field in new_fields:
+                        self[name][field] = default_values[field]
+
+                    for field in removed_fields:
+                        self[name].drop(field, inplace=True, axis=1)
 
         self.audit_data_types()
