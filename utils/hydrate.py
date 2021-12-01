@@ -1,9 +1,7 @@
 import pandas as pd
-from .is_uuid import is_uuid
 
 CORE_TYPES = (str, int, float, bool)
 OUTER_TYPES = (list, dict)
-
 
 
 def retrieve_foreign_data(db, model_name, pk: str):
@@ -12,7 +10,6 @@ def retrieve_foreign_data(db, model_name, pk: str):
         return foreign_data
 
     return None
-
 
 
 def parse_datatype(db, datatype, value):
@@ -52,8 +49,8 @@ def parse_datatype(db, datatype, value):
                         else:
                             result.append(inner_type(value[index]))
 
-                # else:
-                    # raise TypeError(f'{inner_type} is not a supported type.')
+                else:
+                    raise TypeError(f'{inner_type} is not a supported type.')
 
             return result
 

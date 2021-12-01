@@ -1,5 +1,4 @@
 from .client import Client
-from .is_uuid import is_uuid
 from .database import handle_sort, handle_limit, column_filters
 from .encrypt import encrypt
 from .file_to_string import file_to_string
