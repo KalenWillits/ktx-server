@@ -9,6 +9,7 @@ from .utils import (
     handle_limit,
     column_filters,
     hydrate,
+    parse_datatype,
 )
 
 from .models import ModelManager, Model
@@ -147,7 +148,7 @@ class Database:
                     for field in self[name].columns:
                         if datatype := datatypes.get(field):
                             self[name][field] = self[name][field].apply(
-                                lambda value: datatype(value) if value else datatype())
+                                lambda value: parse_datatype(self, datatype, value))
 
     def save(self):
         self.audit_data_types()
@@ -181,4 +182,4 @@ class Database:
                     for field in removed_fields:
                         self[name].drop(field, inplace=True, axis=1)
 
-        self.audit_data_types()
+        # self.audit_data_types()

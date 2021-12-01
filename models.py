@@ -15,11 +15,10 @@ class Model:
     def pk(self, value):
         self._pk = value
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, **kwargs):
         self._schema = Schema(self)
         self._name = self.__class__.__name__
         self.__dict__.update(self._schema.default_values())
-
         for field, datatype in self._schema.datatypes().items():
             if value := kwargs.get(field):
                 setattr(self, field, datatype(value))
@@ -51,7 +50,7 @@ class Model:
         return df.to_string()
 
     def __str__(self):
-        return self.__name__
+        return self._name
 
 
 class ModelManager:

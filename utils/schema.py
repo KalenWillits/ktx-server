@@ -60,8 +60,6 @@ class Schema:
                 #     ...
 
                 # TODO: Remove this when FK lookups are moved to type hints.
-                if isclass(value):
-                    value = None
 
             else:
                 value = resolve_default_value(datatypes.get(field))

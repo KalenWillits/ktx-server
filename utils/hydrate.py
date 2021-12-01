@@ -49,9 +49,6 @@ def parse_datatype(db, datatype, value):
                         else:
                             result.append(inner_type(value[index]))
 
-                else:
-                    raise TypeError(f'{inner_type} is not a supported type.')
-
             return result
 
         if outer_type is dict:
