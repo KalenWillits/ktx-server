@@ -1,5 +1,6 @@
 from inspect import isclass
 from typing import get_type_hints
+from .resolve_default_value import resolve_default_value
 
 
 class Schema:
@@ -45,19 +46,25 @@ class Schema:
 
         default_values_dict = {}
         for field in self.fields():
+
             if hasattr(self.instance.__class__, field):
                 value = getattr(self.instance.__class__, field)
-                if isinstance(value, list):
-                    if len(value) > 0:
-                        value = next(iter(value))
-                        if isclass(value):
-                            value = []
 
+                # if isinstance(value, list):
+                #     if len(value) > 0:
+                #         value = next(iter(value))
+                #         if isclass(value):
+                #             value = []
+
+                # elif isinstance(value, dict):
+                #     ...
+
+                # TODO: Remove this when FK lookups are moved to type hints.
                 if isclass(value):
                     value = None
 
             else:
-                value = None
+                value = resolve_default_value(datatypes.get(field))
 
             if isinstance(value, property):
 
@@ -66,14 +73,20 @@ class Schema:
                     value = getattr(self.instance.__class__, f'_{field}')
 
                 else:
-                    value = datatypes.get(field)()
+                    value = resolve_default_value(datatypes.get(field))
 
             default_values_dict[field] = value
 
         return default_values_dict
 
     def items(self):
-        datatypes = self.datatypes()
-        default_values = self.default_values()
-        for field in self.fields():
-            yield field, datatypes[field], default_values[field]
+        try:
+            datatypes = self.datatypes()
+            default_values = self.default_values()
+            for field in self.fields():
+                yield field, datatypes[field], default_values[field]
+
+        except KeyError as error:
+            raise KeyError(error)
+            raise Exception(f'Model {self.instance._name} field {field} has been set up incorrectly')
+

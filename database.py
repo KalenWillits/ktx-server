@@ -172,7 +172,11 @@ class Database:
                     removed_fields = loaded_fields.difference(model_fields)
 
                     for field in new_fields:
-                        self[name][field] = default_values[field]
+                        if isinstance((default_value := default_values[field]), (list, dict)):
+                            for index in self[name].index:
+                                self[name][field].iloc[index] = default_value
+                        else:
+                            self[name][field] = default_value
 
                     for field in removed_fields:
                         self[name].drop(field, inplace=True, axis=1)
