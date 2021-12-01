@@ -1,4 +1,5 @@
 import asyncio
+import sys
 import json
 from uuid import uuid4
 from datetime import datetime
@@ -71,6 +72,7 @@ class Server:
         self.commands = {
             'run': self.run_default(),
             'shell': self.run_shell(),
+            'migrate': self.run_migrations(),
         }
 
     def log(self, *args):
@@ -92,6 +94,13 @@ class Server:
             exec(f'from {model.__module__} import {model.__name__}', globals())
 
         return lambda: embed()
+
+    def run_migrations(self):
+        self.log(f'[APPLYING MIGRATIONS]')
+        return self.database.migrate()
+        self.log(f'[MIGRATIONS COMPLETE]')
+        self.database.save()
+        sys.exit()
 
     def check_if_trusted(self, websocket) -> bool:
         if websocket.remote_address[0] in self.trust or not self.trust:
@@ -228,6 +237,7 @@ class Server:
             try:
                 self.log(f'[STARTING] {self.host}:{self.port}')
                 self.database.load()
+                self.database.audit_datatypes()
                 self.tasks.execute_startup_tasks(
                     db=self.database,
                     sv=self)

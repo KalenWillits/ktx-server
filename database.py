@@ -140,46 +140,44 @@ class Database:
                     empty_df = model()._to_df().iloc[0:0]
                     self[name] = empty_df
 
-    def audit_data_types(self):
+    def audit_datatypes(self):
         for model in self.models:
-            if name := model.__name__:
-                if self.has(name):
-                    datatypes = model()._schema.datatypes()
-                    for field in self[name].columns:
-                        if datatype := datatypes.get(field):
-                            self[name][field] = self[name][field].apply(
-                                lambda value: parse_datatype(self, datatype, value))
+            instance = model()
+            for field, datatype, default_value in instance._schema.items():
+                self[instance._name][field].apply(lambda value: parse_datatype(self, datatype, value))
+
+    def migrate(self):
+        for model in self.models:
+            instance = model()
+            loaded_fields = set(self[instance._name].columns)
+            model_fields = set([field for field in instance._schema.fields()])
+            new_fields = model_fields.difference(loaded_fields)
+            removed_fields = loaded_fields.difference(model_fields)
+
+            if new_fields:
+                print(f'[MIGRATION] {instance._name} -> Adding: {new_fields}.')
+
+            if removed_fields:
+                print(f'[MIGRATION] {instance._name} -> Removing: {removed_fields}')
+
+            for field in new_fields:
+                self[instance._name][field] = None
+
+            for field in removed_fields:
+                self[instance._name] = self[instance._name].drop(field, axis=1)
+
+        self.audit_datatypes()
+
 
     def save(self):
-        self.audit_data_types()
+        self.audit_datatypes()
         for model in self.models:
-            if name := model.__name__:
-                if hasattr(self, name):
-                    self[name].to_json(os.path.join(self.path, f'{name}.json'), orient='records')
+            self[model.__name__].to_json(os.path.join(self.path, f'{model.__name__}.json'), orient='records')
 
     def load(self):
         self.init_schema()
         for model in self.models:
-            if name := model.__name__:
-                if os.path.isfile(os.path.join(self.path, f'{name}.json')):
-                    self[name] = pd.read_json(os.path.join(self.path, f'{name}.json'))
+            if os.path.isfile(os.path.join(self.path, f'{model.__name__}.json')):
+                self[model.__name__] = pd.read_json(os.path.join(self.path, f'{model.__name__}.json'))
 
-                    # Handle migrations
-                    instance = model()
-                    default_values = instance._schema.default_values()
-                    loaded_fields = set(self[name].columns)
-                    model_fields = set([field for field in instance._schema.fields()])
-                    new_fields = model_fields.difference(loaded_fields)
-                    removed_fields = loaded_fields.difference(model_fields)
 
-                    for field in new_fields:
-                        if isinstance((default_value := default_values[field]), (list, dict)):
-                            for index in self[name].index:
-                                self[name][field].iloc[index] = default_value
-                        else:
-                            self[name][field] = default_value
-
-                    for field in removed_fields:
-                        self[name].drop(field, inplace=True, axis=1)
-
-        # self.audit_data_types()
