@@ -146,7 +146,6 @@ class Database:
         for field, datatype, default_value in instance._schema.items():
             self[instance._name][field].apply(lambda value: parse_datatype(self, datatype, value))
 
-
     def audit_datatypes(self):
         for model in self.models:
             self.init_datatypes(model)
@@ -170,21 +169,17 @@ class Database:
         for model in self.models:
             self.init_fields(model)
 
-
     def migrate(self):
         self.audit_tables()
         self.audit_fields()
         self.audit_datatypes()
 
-
     def save(self):
         for model in self.models:
             json_file_path = os.path.join(self.path, f'{model.__name__}.json')
-            self[model.__name__].to_json(json_file_path)
+            self[model.__name__].to_json(json_file_path, orient='table')
 
     def load(self):
         for model in self.models:
             if os.path.isfile(os.path.join(self.path, f'{model.__name__}.json')):
                 self[model.__name__] = pd.read_json(os.path.join(self.path, f'{model.__name__}.json'))
-
-
