@@ -25,7 +25,6 @@ class Database:
         '''
         self.models = models
         self.path = path
-        self.load()
 
     def __setitem__(self, key, value):
         self.__dict__[key] = value
@@ -133,49 +132,57 @@ class Database:
     def hydrate(self, model_name: str, **kwargs):
         return hydrate(self, model_name, self.query(model_name, **kwargs))
 
-    def init_schema(self):
+    def init_table(self, model):
+        print(f'[ADD-TABLE] {model.__name__}.__schema__')
+        self[model.__name__] = model()._to_df().iloc[0:0]
+
+    def audit_tables(self):
         for model in self.models:
-            if name := model.__name__:
-                if not self.has(name):
-                    empty_df = model()._to_df().iloc[0:0]
-                    self[name] = empty_df
+            if not self.has(model.__name__):
+                self.init_table(model)
+
+    def init_datatypes(self, model):
+        instance = model()
+        for field, datatype, default_value in instance._schema.items():
+            self[instance._name][field].apply(lambda value: parse_datatype(self, datatype, value))
+
 
     def audit_datatypes(self):
         for model in self.models:
-            instance = model()
-            for field, datatype, default_value in instance._schema.items():
-                self[instance._name][field].apply(lambda value: parse_datatype(self, datatype, value))
+            self.init_datatypes(model)
+
+    def init_fields(self, model):
+        instance = model()
+        loaded_fields = set(self[instance._name].columns)
+        model_fields = set([field for field in instance._schema.fields()])
+        new_fields = model_fields.difference(loaded_fields)
+        removed_fields = loaded_fields.difference(model_fields)
+
+        for field in new_fields:
+            print(f'[ADD-FIELD] {model.__name__} + {field}')
+            self[instance._name][field] = None
+
+        for field in removed_fields:
+            print(f'[DROP-FIELD] {model.__name__} - {field}')
+            self[instance._name] = self[instance._name].drop(field, axis=1)
+
+    def audit_fields(self):
+        for model in self.models:
+            self.init_fields(model)
+
 
     def migrate(self):
-        for model in self.models:
-            instance = model()
-            loaded_fields = set(self[instance._name].columns)
-            model_fields = set([field for field in instance._schema.fields()])
-            new_fields = model_fields.difference(loaded_fields)
-            removed_fields = loaded_fields.difference(model_fields)
-
-            if new_fields:
-                print(f'[MIGRATION] {instance._name} -> Adding: {new_fields}.')
-
-            if removed_fields:
-                print(f'[MIGRATION] {instance._name} -> Removing: {removed_fields}')
-
-            for field in new_fields:
-                self[instance._name][field] = None
-
-            for field in removed_fields:
-                self[instance._name] = self[instance._name].drop(field, axis=1)
-
+        self.audit_tables()
+        self.audit_fields()
         self.audit_datatypes()
 
 
     def save(self):
-        self.audit_datatypes()
         for model in self.models:
-            self[model.__name__].to_json(os.path.join(self.path, f'{model.__name__}.json'), orient='records')
+            json_file_path = os.path.join(self.path, f'{model.__name__}.json')
+            self[model.__name__].to_json(json_file_path)
 
     def load(self):
-        self.init_schema()
         for model in self.models:
             if os.path.isfile(os.path.join(self.path, f'{model.__name__}.json')):
                 self[model.__name__] = pd.read_json(os.path.join(self.path, f'{model.__name__}.json'))

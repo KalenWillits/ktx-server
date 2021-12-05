@@ -3,9 +3,9 @@ import sys
 import json
 from uuid import uuid4
 from datetime import datetime
+import argparse
 
 import websockets
-import argparse
 
 from websockets.exceptions import ConnectionClosedError
 
@@ -46,6 +46,7 @@ class Server:
         data: str = './',
         trust: list = [],
         gate=all,
+        migrate_on_start=True,
         channels: ChannelManager = ChannelManager(),
         models: ModelManager = ModelManager(),
         actions: ActionManager = ActionManager(),
@@ -69,10 +70,11 @@ class Server:
         self.trust = trust
         self.headers = headers
         self.gate = gate
+        self.migrate_on_start = migrate_on_start
         self.commands = {
             'run': self.run_default(),
             'shell': self.run_shell(),
-            'migrate': self.run_migrations(),
+            'migrate': self.run_migrations,
         }
 
     def log(self, *args):
@@ -97,10 +99,8 @@ class Server:
 
     def run_migrations(self):
         self.log(f'[APPLYING MIGRATIONS]')
-        return self.database.migrate()
-        self.log(f'[MIGRATIONS COMPLETE]')
+        self.database.migrate()
         self.database.save()
-        sys.exit()
 
     def check_if_trusted(self, websocket) -> bool:
         if websocket.remote_address[0] in self.trust or not self.trust:
@@ -233,11 +233,15 @@ class Server:
         if args.cmd == 'shell':
             self.commands.get('shell')()
 
+        elif args.cmd == 'migrate':
+            self.commands.get('migrate')()
+
         elif init_function := self.commands.get(args.cmd):
             try:
                 self.log(f'[STARTING] {self.host}:{self.port}')
                 self.database.load()
-                self.database.audit_datatypes()
+                if self.migrate_on_start:
+                    self.database.migrate()
                 self.tasks.execute_startup_tasks(
                     db=self.database,
                     sv=self)
@@ -249,8 +253,10 @@ class Server:
                         sv=self))
 
                 asyncio.get_event_loop().run_forever()
+
             except KeyboardInterrupt:
                 self.log('[SHUTDOWN]')
+
             finally:
                 self.log('[CLEANUP-TASKS-STARTED]')
                 self.tasks.execute_shutdown_tasks(
