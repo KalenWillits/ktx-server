@@ -25,33 +25,13 @@ class Database:
         '''
         self.models = models
         self.path = path
+        self.load()
 
     def __setitem__(self, key, value):
         self.__dict__[key] = value
 
     def __getitem__(self, key):
         return self.__dict__[key]
-
-    def __repr__(self):
-        terminal_width = os.get_terminal_size().columns
-        header = 'DATABASE'
-        header_margin = int((terminal_width / 2) - (len(header) / 2)) * '_'
-        output = header_margin + header + header_margin
-
-        for model in self.models:
-            shape = self[model.__name__].shape
-            info = f"{model.__name__}(COLUMNS: {shape[1]}, ROWS: {shape[0]})"
-            info_margin = int((terminal_width / 2) - (len(info) / 2)) * '-'
-
-            output += '\n' + info_margin + info + info_margin
-
-            schema = [{'FIELD': field, 'DATATYPE': datatype, 'DEFAULT': default_value}
-                      for field, datatype, default_value in model()._schema.items()]
-            schema_df = pd.DataFrame(schema)
-            output += schema_df.to_string()
-
-        output += '\n' + '_' * terminal_width
-        return output
 
     def has(self, model_name: str) -> bool:
         if hasattr(self, model_name):
@@ -133,7 +113,6 @@ class Database:
         return hydrate(self, model_name, self.query(model_name, **kwargs))
 
     def init_table(self, model):
-        print(f'[ADD-TABLE] {model.__name__}.__schema__')
         self[model.__name__] = model()._to_df().iloc[0:0]
 
     def audit_tables(self):
@@ -158,11 +137,9 @@ class Database:
         removed_fields = loaded_fields.difference(model_fields)
 
         for field in new_fields:
-            print(f'[ADD-FIELD] {model.__name__} + {field}')
             self[instance._name][field] = None
 
         for field in removed_fields:
-            print(f'[DROP-FIELD] {model.__name__} - {field}')
             self[instance._name] = self[instance._name].drop(field, axis=1)
 
     def audit_fields(self):
@@ -177,9 +154,11 @@ class Database:
     def save(self):
         for model in self.models:
             json_file_path = os.path.join(self.path, f'{model.__name__}.json')
-            self[model.__name__].to_json(json_file_path, orient='table')
+            self[model.__name__].to_json(json_file_path, orient='records')
 
     def load(self):
         for model in self.models:
-            if os.path.isfile(os.path.join(self.path, f'{model.__name__}.json')):
-                self[model.__name__] = pd.read_json(os.path.join(self.path, f'{model.__name__}.json'))
+            json_file_path = os.path.join(self.path, f'{model.__name__}.json')
+            if os.path.isfile(json_file_path):
+                self[model.__name__] = pd.read_json(json_file_path)
+                # self.init_fields(model)

@@ -46,7 +46,6 @@ class Server:
         data: str = './',
         trust: list = [],
         gate=all,
-        migrate_on_start=True,
         channels: ChannelManager = ChannelManager(),
         models: ModelManager = ModelManager(),
         actions: ActionManager = ActionManager(),
@@ -70,7 +69,6 @@ class Server:
         self.trust = trust
         self.headers = headers
         self.gate = gate
-        self.migrate_on_start = migrate_on_start
         self.commands = {
             'run': self.run_default(),
             'shell': self.run_shell(),
@@ -94,11 +92,11 @@ class Server:
 
         for model in self.models:
             exec(f'from {model.__module__} import {model.__name__}', globals())
+        self.database.migrate()
 
         return lambda: embed()
 
     def run_migrations(self):
-        self.log(f'[APPLYING MIGRATIONS]')
         self.database.migrate()
         self.database.save()
 
@@ -239,9 +237,7 @@ class Server:
         elif init_function := self.commands.get(args.cmd):
             try:
                 self.log(f'[STARTING] {self.host}:{self.port}')
-                self.database.load()
-                if self.migrate_on_start:
-                    self.database.migrate()
+                self.database.migrate()
                 self.tasks.execute_startup_tasks(
                     db=self.database,
                     sv=self)
