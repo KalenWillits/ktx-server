@@ -62,8 +62,8 @@ class Database:
             kwargs, df = handle_limit(kwargs, df)
 
             for key, value in kwargs.items():
-                if isinstance(value, (list, set)):
-                    continue
+                if isinstance(value, (list, dict)):
+                    raise TypeError('Nested value filtering is not supported.')
 
                 if '__' in key:
 
@@ -73,8 +73,8 @@ class Database:
                         df[column] = pd.to_datetime(df[column])
 
                     # FK lookup.
-                    if inspect.isclass(fk_model := getattr(self.models[model_name], column)):
-                        fk_df = self.query(fk_model.__name__, **{operator: value}).pk
+                    if foreign_model := self.models[model_name].datatypes()[column] in self.models:
+                        fk_df = self.query(foreign_model.__name__, **{operator: value}).pk
                         temp_column_suffix = f'_{uuid4()}'
                         df = pd.merge(left=df, right=fk_df, how='right', left_on=column, right_on='pk',
                                       suffixes=(None, temp_column_suffix))

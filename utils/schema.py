@@ -50,17 +50,6 @@ class Schema:
             if hasattr(self.instance.__class__, field):
                 value = getattr(self.instance.__class__, field)
 
-                # if isinstance(value, list):
-                #     if len(value) > 0:
-                #         value = next(iter(value))
-                #         if isclass(value):
-                #             value = []
-
-                # elif isinstance(value, dict):
-                #     ...
-
-                # TODO: Remove this when FK lookups are moved to type hints.
-
             else:
                 value = resolve_default_value(datatypes.get(field))
 
