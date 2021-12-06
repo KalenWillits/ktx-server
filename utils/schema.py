@@ -1,5 +1,5 @@
-from inspect import isclass
 from typing import get_type_hints
+
 from .resolve_default_value import resolve_default_value
 
 

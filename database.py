@@ -161,4 +161,3 @@ class Database:
             json_file_path = os.path.join(self.path, f'{model.__name__}.json')
             if os.path.isfile(json_file_path):
                 self[model.__name__] = pd.read_json(json_file_path)
-                # self.init_fields(model)
