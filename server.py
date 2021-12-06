@@ -132,9 +132,9 @@ class Server:
                     self.log(f'[HEADER-CHECK-FAILED] {header._name}:{kwargs}')
 
             except Exception as error:
+                errors['Errors'].extend(error.args)
                 if self.debug:
                     raise error
-                errors['Errors'].append('Error in header processing')
 
         if errors['Errors']:
             asyncio.ensure_future(websocket.send(json.dumps(errors)))
@@ -181,15 +181,16 @@ class Server:
                                 response.update(data)
                                 channels.update(action_channels)
                             except Exception as error:
+                                errors['Errors'].extend(error.args)
                                 if self.debug:
                                     raise error
-                                errors['Errors'].append('Unable to complete action')
 
                         else:
                             await websocket.send(json.dumps({'Errors': [f'No action [{action_name}]']}))
 
                     if errors['Errors']:
                         response.update(errors)
+                        channels.add(websocket.auth)
 
                     self.broadcast(json.dumps(response), list(channels))
 
