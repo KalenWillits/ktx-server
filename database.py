@@ -154,7 +154,7 @@ class Database:
     def save(self):
         for model in self.models:
             json_file_path = os.path.join(self.path, f'{model.__name__}.json')
-            self[model.__name__].to_json(json_file_path, orient='records')
+            self[model.__name__].to_json(json_file_path, orient='records', indent=4)
 
     def load(self):
         for model in self.models:
