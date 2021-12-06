@@ -12,7 +12,6 @@ from .parse_list import parse_list
 from .parse_nums import parse_nums
 from .parse_set import parse_set
 from .schema import Schema
-from .server_time import ServerTime
 from .string_to_file import string_to_file
 from .to_snake import to_snake
 from .resolve_default_value import resolve_default_value
