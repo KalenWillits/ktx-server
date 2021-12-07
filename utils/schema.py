@@ -10,24 +10,35 @@ class Schema:
     def datatypes(self):
         datatypes_dict = get_type_hints(self.instance.__class__)
         datatypes_dict.update(self.instance.__annotations__)
-        for field_name in dir(self.instance):
-            if '__' in field_name:
+
+        result = {}
+        for field in datatypes_dict.keys():
+            if '__' in field:
                 continue
-            if field_name[0] == '_':
+            if field[0] == '_':
                 continue
 
+            result[field] = datatypes_dict[field]
+
+        for field in dir(self.instance):
+            if '__' in field:
+                continue
+            if field[0] == '_':
+                continue
+
+
             # Gathering and formatting datatypes for properties
-            if hasattr(self.instance.__class__, field_name):
-                field_value = getattr(self.instance.__class__, field_name)
+            if hasattr(self.instance.__class__, field):
+                field_value = getattr(self.instance.__class__, field)
                 if hasattr(field_value, 'fget'):
                     field_dtype = get_type_hints(field_value.fget)
                     try:
-                        datatypes_dict.update({field_name: field_dtype['return']})
+                        result.update({field: field_dtype['return']})
                     except KeyError:
                         raise Exception(
-                            f'Type hint requirement not met on {self.instance.__class__.__name__}.{field_name}')
+                            f'Type hint requirement not met on {self.instance.__class__.__name__}.{field}')
 
-        return datatypes_dict
+        return result
 
     def fields(self):
         fields = dir(self.instance)

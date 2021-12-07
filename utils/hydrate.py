@@ -20,8 +20,13 @@ def parse_datatype(db, datatype, value):
 
         if outer_type is list:
             if not inner_types[-1] is Ellipsis:
-                assert_message = f'Validation error -> {inner_types} does not match length of {value}.'
-                assert len(value) == len(inner_types), assert_message
+                while len(value) < len(inner_types):
+                    if (inner_type := inner_types[0]) in db.models:
+                        value.append(None)
+                    else:
+                        value.append(inner_type())
+
+                value = value[:len(inner_types) + 1]
 
             result = []
 
