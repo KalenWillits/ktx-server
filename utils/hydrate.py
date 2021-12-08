@@ -93,26 +93,31 @@ def hydrate(db, model_name: str, df: pd.DataFrame, inherit=None):
     for index in range(df.shape[0]):
         record = df.iloc[index].to_dict()
         for field, datatype, default_value in instance._schema.items():
+
             if hasattr(datatype, '__origin__'):
                 outer_type = datatype.__origin__
                 inner_types = datatype.__args__
                 if outer_type is list:
-                    record[field] = next(dig(db, outer_type, inner_types, record[field]), [])
+                    if result := next(dig(db, outer_type, inner_types, record[field], field=field), None):
+                        record[field] = result
 
                 elif outer_type is dict:
-                    record[field] = next(dig(db, outer_type, inner_types, record[field]), {})
+                    if result := next(dig(db, outer_type, inner_types, record[field]), None):
+                        record[field] = result
 
             elif datatype in db.models:
                 if isinstance(record[field], dict):
-                    pk = record[field].get('pk', record[field])
+                    pk = record[field].get('pk', '')
                 else:
                     pk = record[field]
-                record[field] = next(hydrate(db, datatype.__name__, db.query(datatype.__name__, pk=pk)), None)
+
+                if pk:
+                    record[field] = next(hydrate(db, datatype.__name__, db.query(datatype.__name__, pk=pk)), None)
 
         yield record
 
 
-def dig(db, outer_type, inner_types, data):
+def dig(db, outer_type, inner_types, data, field=None):
     record = None
     if outer_type is list:
         record = []
@@ -133,9 +138,15 @@ def dig(db, outer_type, inner_types, data):
                 if hasattr(inner_types[1], '__origin__'):
                     record.update({key: next(dig(db, inner_types[1].__origin__, inner_types[1].__args__, value), None)})
                 elif inner_types[1] in db.models:
-                    record.update(
-                        {key: next(
-                            hydrate(db, inner_types[1].__name__, db.query(inner_types[1].__name__, pk=value)), None)})
+                    if isinstance(value, dict):
+                        pk = value.get('pk')
+                    else:
+                        pk = value
+
+                    if pk:
+                        record.update(
+                            {key: next(
+                                hydrate(db, inner_types[1].__name__, db.query(inner_types[1].__name__, pk=pk)), None)})
                 else:
                     record.update({key: value})
 
