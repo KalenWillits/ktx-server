@@ -59,7 +59,7 @@ def parse_datatype(db, datatype, value):
         if outer_type is dict:
             assert len(inner_types) == 2, f'{inner_types} <- dict types can only contain a key type and value type.'
             assert inner_types[0] in CORE_TYPES, f'{inner_types[0]} <- is not a supported key type.'
-            assert isinstance(value, dict), f'Validation error: {model_name} -> {value} is not of type {datatype}'
+            assert isinstance(value, dict), f'Validation error: {value} is not of type {datatype}'
 
             key_type = inner_types[0]
             value_type = inner_types[1]

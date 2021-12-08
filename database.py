@@ -1,5 +1,4 @@
 from uuid import uuid4
-import inspect
 import pandas as pd
 import os
 
@@ -100,8 +99,8 @@ class Database:
         return None
 
     def update(self, model_name: str, query: pd.DataFrame, **kwargs):
-        for column, value in kwargs.items():
-            self[model_name][column].iloc[query.index] = [value]
+        for field, value in kwargs.items():
+            self[model_name].loc[query.index, field] = [value]
 
         return self[model_name].iloc[query.index]
 
