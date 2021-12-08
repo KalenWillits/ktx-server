@@ -119,6 +119,14 @@ class Database:
             if not self.has(model.__name__):
                 self.init_table(model)
 
+    def audit_nulls(self):
+        for model in self.models:
+            instance = model()
+            for field, datatype in instance._schema.datatypes().items():
+                nulls_index = self[instance._name][field].isnull()
+                if nulls_index.sum() and datatype not in self.models:
+                    self[instance._name].loc[nulls_index, field] = pd.Series([datatype()] * nulls_index.sum())
+
     def init_datatypes(self, model):
         instance = model()
         for field, datatype, default_value in instance._schema.items():
@@ -148,6 +156,7 @@ class Database:
     def migrate(self):
         self.audit_tables()
         self.audit_fields()
+        self.audit_nulls()
         self.audit_datatypes()
 
     def save(self):

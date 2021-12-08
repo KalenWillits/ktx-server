@@ -3,7 +3,7 @@ from .database import handle_sort, handle_limit, column_filters
 from .encrypt import encrypt
 from .file_to_string import file_to_string
 from .generate_salt import generate_salt
-from .hydrate import hydrate, parse_datatype, retrieve_foreign_data
+from .hydrate import hydrate, parse_datatype, retrieve_foreign_data, CORE_TYPES, OUTER_TYPES
 from .is_datetime import is_datetime
 from .is_numeric import is_numeric
 from .object import Object
