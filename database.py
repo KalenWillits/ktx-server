@@ -9,6 +9,7 @@ from .utils import (
     column_filters,
     hydrate,
     parse_datatype,
+    assert_datatypes,
 )
 
 from .models import ModelManager, Model
@@ -41,6 +42,10 @@ class Database:
 
     def create(self, model_name, **kwargs) -> Model:
         instance = self.models[model_name](**kwargs)
+        datatypes = instance._schema.datatypes()
+        for key, value in kwargs.items():
+            assert_datatypes(self, datatypes[key], value, key)
+
         df = instance._to_df()
 
         if self.has(model_name):
@@ -81,6 +86,8 @@ class Database:
 
                     # Special filters
                     else:
+                        if operator == 'includes':
+                            breakpoint()
                         df = column_filters[operator](df, column, value)
 
                     if is_datetime(value):
@@ -99,6 +106,12 @@ class Database:
         return None
 
     def update(self, model_name: str, query: pd.DataFrame, **kwargs):
+        instance = self.models[model_name](**kwargs)
+        datatypes = instance._schema.datatypes()
+
+        for key, value in kwargs.items():
+            assert_datatypes(self, datatypes[key], value, key)
+
         for field, value in kwargs.items():
             self[model_name].loc[query.index, field] = [value]
 

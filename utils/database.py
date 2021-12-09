@@ -21,15 +21,17 @@ def handle_limit(kwargs, df):
 
 
 column_filters = {
-    'f': lambda df, column, value: df[df[column].str.contains(value, regex=False)],  # find in column
-    're': lambda df, column, value: df[df[column].str.contains(value)],  # regex in column
+    'find': lambda df, column, value: df[df[column].str.contains(value, regex=False)],  # find in column
+    'regex': lambda df, column, value: df[df[column].str.contains(value)],  # regex in column
     'eq': lambda df, column, value: df[df[column] == value],  # equals
     'gt': lambda df, column, value: df[df[column] > value],  # greater than
     'lt': lambda df, column, value: df[df[column] < value],  # less than
     'ge': lambda df, column, value: df[df[column] >= value],  # greater than or equal to
     'le': lambda df, column, value: df[df[column] <= value],  # less than or equal to
     'max': lambda df, column, value: df[df[column] == df[column].max()],  # maximum (value is unused)
-    'min': lambda df, column, value: df[df[column] == df[column].min()],  # minnimum (value is unused)
+    'min': lambda df, column, value: df[df[column] == df[column].min()],  # minimum (value is unused)
     'in': lambda df, column, value: df[df[column].isin(value)],  # Find all values that are in a list
     'nin': lambda df, column, value: df[~df[column].isin(value)],  # Find all values that are not in a list
+    'includes': lambda df, column, value: df[df[column].apply(lambda cell_value: value in cell_value)],
+    'excludes': lambda df, column, value: df[df[column].apply(lambda cell_value: value in cell_value)]
 }

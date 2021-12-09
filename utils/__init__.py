@@ -15,3 +15,4 @@ from .schema import Schema
 from .string_to_file import string_to_file
 from .to_snake import to_snake
 from .resolve_default_value import resolve_default_value
+from .assert_datatypes import assert_datatypes
