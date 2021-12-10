@@ -1,3 +1,4 @@
+import os
 import asyncio
 import json
 from uuid import uuid4
@@ -37,13 +38,13 @@ class Server:
     '''
     def __init__(
         self,
-        protocol: str = 'ws',
-        host: str = 'localhost',
-        port: int = 5000,
-        debug: bool = True,
+        protocol: str = os.environ.get('PROTOCOL', 'ws'),
+        host: str = os.environ.get('HOST','localhost'),
+        port: int = os.environ.get('PORT', 5000),
+        debug: bool = os.environ.get('DEBUG', True),
         database: Database = None,
-        data: str = './',
-        trust: list = [],
+        data: str = os.environ('DATA', './'),
+        trust: list = os.environ('TRUST', ,[]),
         gate=all,
         channels: ChannelManager = ChannelManager(),
         models: ModelManager = ModelManager(),

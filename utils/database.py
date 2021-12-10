@@ -32,6 +32,10 @@ column_filters = {
     'min': lambda df, column, value: df[df[column] == df[column].min()],  # minimum (value is unused)
     'in': lambda df, column, value: df[df[column].isin(value)],  # Find all values that are in a list
     'nin': lambda df, column, value: df[~df[column].isin(value)],  # Find all values that are not in a list
-    'includes': lambda df, column, value: df[df[column].apply(lambda cell_value: value in cell_value)],
-    'excludes': lambda df, column, value: df[df[column].apply(lambda cell_value: value in cell_value)]
+    'includes': lambda df, column, value: df[df[column].apply(
+        lambda cell_value: any(set(value).intersection(set(cell_value)))
+    )],
+    'excludes': lambda df, column, value: df[df[column].apply(
+        lambda cell_value: any(set(value).difference(set(cell_value)))
+    )],
 }
