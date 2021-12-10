@@ -23,14 +23,14 @@ def assert_datatypes(db, datatype, value, field: str) -> None:
         elif outer_type is dict:
             assert len(inner_types) == 2, assert_message
             for key, value in value.items():
-                assert_datatypes(db, inner_types[0], key)
-                assert_datatypes(db, inner_types[1], value)
+                assert_datatypes(db, inner_types[0], key, field)
+                assert_datatypes(db, inner_types[1], value, field)
 
         else:
             raise TypeError(f'Type{datatype} is an unsupported type.')
 
     else:
         if datatype in db.models:
-            assert type(value) is str, assert_message
+                assert type(value) is str, assert_message
         else:
             assert type(value) is datatype, assert_message

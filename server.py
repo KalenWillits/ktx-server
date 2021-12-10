@@ -39,12 +39,12 @@ class Server:
     def __init__(
         self,
         protocol: str = os.environ.get('PROTOCOL', 'ws'),
-        host: str = os.environ.get('HOST','localhost'),
+        host: str = os.environ.get('HOST', 'localhost'),
         port: int = os.environ.get('PORT', 5000),
         debug: bool = os.environ.get('DEBUG', True),
         database: Database = None,
-        data: str = os.environ('DATA', './'),
-        trust: list = os.environ('TRUST', ,[]),
+        data: str = os.environ.get('DATA', './'),
+        trust: list = os.environ.get('TRUST', []),
         gate=all,
         channels: ChannelManager = ChannelManager(),
         models: ModelManager = ModelManager(),
@@ -92,7 +92,6 @@ class Server:
 
         for model in self.models:
             exec(f'from {model.__module__} import {model.__name__}', globals())
-        self.database.migrate()
 
         return lambda: embed()
 
