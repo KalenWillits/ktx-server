@@ -7,8 +7,7 @@ import argparse
 
 import websockets
 
-from websockets.exceptions import ConnectionClosedError
-
+from .utils import handle_connect, handle_disconnect
 from .channels import ChannelManager
 from .models import ModelManager
 from .actions import ActionManager
@@ -46,11 +45,14 @@ class Server:
         data: str = os.environ.get('DATA', './'),
         trust: list = os.environ.get('TRUST', []),
         gate=all,
+        connect=handle_connect,
+        disconnect=handle_disconnect,
         channels: ChannelManager = ChannelManager(),
         models: ModelManager = ModelManager(),
         actions: ActionManager = ActionManager(),
         tasks: TaskManager = TaskManager(),
         headers: HeaderManager = HeaderManager(),
+
     ):
         self.host = host
         self.port = port
@@ -69,6 +71,8 @@ class Server:
         self.trust = trust
         self.headers = headers
         self.gate = gate
+        self.connect = connect
+        self.disconnect = disconnect
         self.commands = {
             'run': self.run_default(),
             'shell': self.run_shell(),
@@ -85,6 +89,7 @@ class Server:
     def run_shell(self):
         global db
         db = self.database
+        db.audit_fields()
         global sv
         sv = self
 
@@ -162,6 +167,7 @@ class Server:
         websocket.pk = str(uuid4())
 
         if self.check_if_trusted(websocket) and self.handle_headers(websocket.request_headers, websocket=websocket):
+            self.connect(ws=websocket, sv=self, db=self.database)
             await self.register(websocket)
             try:
                 async for payload in websocket:
@@ -194,10 +200,9 @@ class Server:
 
                     self.broadcast(json.dumps(response), list(channels))
 
-            except ConnectionClosedError:
-                self.log(f'[CONNECTION CLOSED] {websocket.remote_address}')
-
             finally:
+                self.disconnect(ws=websocket, sv=self, db=self.database)
+                self.log(f'[CONNECTION CLOSED] {websocket.remote_address}')
                 await self.unregister(websocket)
 
     def run(self):

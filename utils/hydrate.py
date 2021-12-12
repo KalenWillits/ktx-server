@@ -88,7 +88,7 @@ def parse_datatype(db, datatype, value):
         raise Exception(f'{datatype} is not supported.')
 
 
-def hydrate(db, model_name: str, df: pd.DataFrame, inherit=None):
+def hydrate(db, model_name: str, df: pd.DataFrame):
     instance = db.models[model_name]()
     for index in range(df.shape[0]):
         record = df.iloc[index].to_dict()
