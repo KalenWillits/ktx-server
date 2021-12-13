@@ -18,7 +18,10 @@ def assert_datatypes(db, datatype, value, field: str) -> None:
                     assert_datatypes(db, inner_type, inner_value, field)
 
             for inner_value, inner_type in zip(value[:len(inner_types)], inner_types):
-                assert_datatypes(db, inner_type, inner_value, field)
+                if inner_type is Ellipsis:
+                    assert_datatypes(db, inner_types[0], inner_value, field)
+                else:
+                    assert_datatypes(db, inner_type, inner_value, field)
 
         elif outer_type is dict:
             assert len(inner_types) == 2, assert_message
@@ -31,6 +34,6 @@ def assert_datatypes(db, datatype, value, field: str) -> None:
 
     else:
         if datatype in db.models:
-                assert type(value) is str, assert_message
+            assert type(value) is str, assert_message
         else:
             assert type(value) is datatype, assert_message
