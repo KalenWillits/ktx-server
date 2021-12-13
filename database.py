@@ -151,7 +151,10 @@ class Database:
 
     def init_fields(self, model):
         instance = model()
-        loaded_fields = set(self[instance._name].columns)
+        if self.has(instance._name):
+            loaded_fields = set(self[instance._name].columns)
+        else:
+            loaded_fields = set()
         model_fields = set([field for field in instance._schema.fields()])
         new_fields = model_fields.difference(loaded_fields)
         removed_fields = loaded_fields.difference(model_fields)

@@ -75,7 +75,7 @@ class Server:
         self.disconnect = disconnect
         self.commands = {
             'run': self.run_default(),
-            'shell': self.run_shell(),
+            'shell': self.run_shell,
             'migrate': self.run_migrations,
         }
 
@@ -98,7 +98,7 @@ class Server:
         for model in self.models:
             exec(f'from {model.__module__} import {model.__name__}', globals())
 
-        return lambda: embed()
+        embed()
 
     def run_migrations(self):
         self.database.migrate()
