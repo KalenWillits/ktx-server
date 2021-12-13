@@ -1,9 +1,9 @@
+import os
 import hashlib
-from .generate_salt import generate_salt
 
 
 def encrypt(string):
-    salt = generate_salt()
+    salt = os.environ.get('SALT', '')
     """
     Hashes a string for use in storing password to a database.
     Optional salt string for added security.
