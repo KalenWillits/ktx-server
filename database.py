@@ -3,20 +3,22 @@ import pandas as pd
 import os
 
 from .utils import (
-    is_datetime,
-    handle_sort,
-    handle_limit,
-    column_filters,
-    hydrate,
-    parse_datatype,
     assert_datatypes,
+    column_filters,
+    handle_limit,
+    handle_sort,
+    hydrate,
+    is_datetime,
+    parse_datatype,
 )
 
 from .models import ModelManager, Model
 
+# TODO Remove this and solve all chained assingments.
 pd.options.mode.chained_assignment = None
 
 
+# TODO: Dynamically compile database at runtime utelizing __slots__ to store tables.
 class Database:
     def __init__(self, models: ModelManager = ModelManager(), path: str = ''):
         '''
@@ -24,7 +26,9 @@ class Database:
         This is a "Pandas Database".
         '''
         self.models = models
+        # TODO ensure this is OS compatible.
         self.path = path
+
         self.load()
 
     def __setitem__(self, key, value):

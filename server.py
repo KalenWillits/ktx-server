@@ -43,8 +43,9 @@ class Server:
         debug: bool = os.environ.get('DEBUG', True),
         database: Database = None,
         data: str = os.environ.get('DATA', './'),
-        trust: list = os.environ.get('TRUST', []),
-        gate=all,
+        trust: list[str, ...] = os.environ.get('TRUST', []),
+        gate: callable = all,
+        cache: dict = {},
         connect=handle_connect,
         disconnect=handle_disconnect,
         channels: ChannelManager = ChannelManager(),
@@ -57,6 +58,9 @@ class Server:
         self.host = host
         self.port = port
         self.debug = debug
+        self.cache = cache
+
+        # TODO move clients to cache
         self.clients = {}
 
         if hasattr(self, 'database'):
@@ -167,6 +171,7 @@ class Server:
         websocket.pk = str(uuid4())
 
         if self.check_if_trusted(websocket) and self.handle_headers(websocket.request_headers, websocket=websocket):
+            # TODO add a cache to the websocket to store auth -- move auth to cache
             self.connect(ws=websocket, sv=self, db=self.database)
             await self.register(websocket)
             try:
