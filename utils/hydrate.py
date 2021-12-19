@@ -122,14 +122,15 @@ def dig(db, outer_type, inner_types, data, field=None):
     if outer_type is list:
         record = []
         if data:
-            for value in data:
-                if hasattr(inner_types[0], '__origin__'):
-                    record = next(dig(db, inner_types[0].__origin__, inner_types[0].__args__, value), None)
-                elif inner_types[0] in db.models:
-                    record = next(
-                        hydrate(db, inner_types[0].__name__, db.query(inner_types[0].__name__, pk=value)), None)
-                else:
-                    record = value
+            if hasattr(inner_types[0], '__origin__'):
+                for value in data:
+                    if hasattr(inner_types[0].__args__[0], '__origin__'):
+                        record = next(dig(db, inner_types[0].__origin__, inner_types[0].__args__, value), None)
+                    elif inner_types[0] in db.models:
+                        record = next(
+                            hydrate(db, inner_types[0].__name__, db.query(inner_types[0].__name__, pk=value)), None)
+                    else:
+                        record = value
 
     elif outer_type is dict:
         record = {}
