@@ -9,6 +9,11 @@ class Model:
         self._name = self.__class__.__name__
         self.__dict__.update(self._schema.default_values())
         for field in self._schema.fields():
+            # If the field is a property and does not have a setter, skip it.
+            class_value = vars(self.__class__).get(field)
+            if isinstance(class_value, property) and class_value.fset is None:
+                continue
+
             if value := kwargs.get(field):
                 setattr(self, field, value)
 
