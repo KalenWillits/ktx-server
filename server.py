@@ -170,7 +170,7 @@ class Server:
         websocket.pk = str(uuid4())
 
         if self.check_if_trusted(websocket) and self.handle_headers(websocket.request_headers, websocket=websocket):
-            # TODO add a cache to the websocket to store auth -- move auth to cache
+            websocket.cache = {}
             self.connect(ws=websocket, sv=self, db=self.database)
             await self.register(websocket)
             try:
