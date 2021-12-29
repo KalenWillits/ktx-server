@@ -1,6 +1,7 @@
 import os
 import asyncio
 import json
+from json import JSONDecodeError
 from uuid import uuid4
 from datetime import datetime
 import argparse
@@ -118,18 +119,16 @@ class Server:
     def handle_headers(self, websocket_headers, websocket=None) -> bool:
         header_results = []
         errors = {'Errors': []}
-        args = []
         kwargs = {}
         for header in self.headers:
-
             if data_string := websocket_headers.get(header._name):
-                kwargs = json.loads(data_string)
-            else:
-                kwargs = {'header': data_string}
+                try:
+                    kwargs = json.loads(data_string)
+                except (TypeError, JSONDecodeError):
+                    kwargs = {'header': data_string}
 
             try:
                 header_function_result = header.execute(
-                    *args,
                     db=self.database,
                     sv=self,
                     ws=websocket,
@@ -176,20 +175,21 @@ class Server:
             await self.register(websocket)
             try:
                 async for payload in websocket:
-                    response = {}
+                    response = []
                     channels = set()
                     errors = {'Errors': []}
-                    query = json.loads(payload)
-                    for action_name in query.keys():
+                    incoming_actions = json.loads(payload)
+                    for incoming_action in incoming_actions:
+                        action_name = next(iter(incoming_action.keys()), None)
                         if action := self.actions[action_name]:
                             try:
                                 data, action_channels = action.execute(
                                     ws=websocket,
                                     sv=self,
                                     db=self.database,
-                                    **query.get(action_name))
+                                    **incoming_action.get(action_name))
 
-                                response.update(data)
+                                response.append(data)
                                 channels.update(action_channels)
                             except Exception as error:
                                 errors['Errors'].extend(error.args)
