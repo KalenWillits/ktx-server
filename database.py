@@ -14,11 +14,9 @@ from .utils import (
 
 from .models import ModelManager, Model
 
-# TODO Remove this and solve all chained assingments.
 pd.options.mode.chained_assignment = None
 
 
-# TODO: Dynamically compile database at runtime utelizing __slots__ to store tables.
 class Database:
     def __init__(self, models: ModelManager = ModelManager(), path: str = ''):
         '''
@@ -90,9 +88,6 @@ class Database:
 
                     # Special filters
                     else:
-                        if operator == 'includes':
-                            #TODO -- complete this
-                            ...
                         df = column_filters[operator](df, column, value)
 
                     if is_datetime(value):
