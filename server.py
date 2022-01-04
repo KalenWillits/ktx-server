@@ -170,7 +170,6 @@ class Server:
         websocket.pk = str(uuid4())
 
         if self.check_if_trusted(websocket) and self.handle_headers(websocket.request_headers, websocket=websocket):
-            websocket.cache = {}
             self.connect(ws=websocket, sv=self, db=self.database)
             await self.register(websocket)
             try:
@@ -197,13 +196,13 @@ class Server:
                                     raise error
 
                         else:
-                            await websocket.send(json.dumps({'Errors': [f'No action [{action_name}]']}))
+                            await websocket.send(json.dumps([{'Errors': [f'No action [{action_name}]']}]))
 
                     if errors['Errors']:
-                        response.update(errors)
+                        response.append(errors)
                         channels.add(websocket.auth)
 
-                    self.broadcast(json.dumps(response), list(channels))
+                    self.broadcast(response, list(channels))
 
             finally:
                 self.disconnect(ws=websocket, sv=self, db=self.database)
