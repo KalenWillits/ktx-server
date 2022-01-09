@@ -178,6 +178,9 @@ class Server:
                     channels = set()
                     errors = {'Errors': []}
                     incoming_actions = json.loads(payload)
+                    if isinstance(incoming_actions, dict):
+                        incoming_actions = [incoming_actions]
+
                     for incoming_action in incoming_actions:
                         action_name = next(iter(incoming_action.keys()), None)
                         if action := self.actions[action_name]:

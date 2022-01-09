@@ -98,7 +98,7 @@ def hydrate(db, model_name: str, df: pd.DataFrame):
                 outer_type = datatype.__origin__
                 inner_types = datatype.__args__
                 if outer_type is list:
-                    if result := next(dig(db, outer_type, inner_types, record[field], field=field), None):
+                    if result := next(dig(db, outer_type, inner_types, record[field]), None):
                         record[field] = result
 
                 elif outer_type is dict:
@@ -117,7 +117,7 @@ def hydrate(db, model_name: str, df: pd.DataFrame):
         yield record
 
 
-def dig(db, outer_type, inner_types, data, field=None):
+def dig(db, outer_type, inner_types, data):
     record = None
     if outer_type is list:
         record = []
@@ -126,18 +126,20 @@ def dig(db, outer_type, inner_types, data, field=None):
             if hasattr(inner_types[0], '__origin__'):
                 for value in data:
                     if hasattr(inner_types[0].__args__[0], '__origin__'):
-                        record = next(dig(db, inner_types[0].__origin__, inner_types[0].__args__, value), None)
+                        record.append(next(dig(db, inner_types[0].__origin__, inner_types[0].__args__, value), None))
                     elif inner_types[0] in db.models:
-                        record = next(
-                            hydrate(db, inner_types[0].__name__, db.query(inner_types[0].__name__, pk=value)), None)
+                        record.append(next(
+                            hydrate(db, inner_types[0].__name__, db.query(inner_types[0].__name__, pk=value)), None))
                     else:
                         record.append(value)
 
             else:
                 for value in data:
                     if inner_types[0] in db.models:
-                        record = next(
-                            hydrate(db, inner_types[0].__name__, db.query(inner_types[0].__name__, pk=value)), None)
+                        if isinstance(value, str):
+                            record.append(next(
+                                hydrate(
+                                    db, inner_types[0].__name__, db.query(inner_types[0].__name__, pk=value)), None))
                     else:
                         record.append(value)
 
