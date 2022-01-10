@@ -113,13 +113,14 @@ class Database:
             assert_datatypes(self, datatypes[key], value, key)
 
         for field, value in kwargs.items():
-            self[model_name].loc[query.index, field] = [value]
+            self[model_name][field].iloc[query.index] = [value]
 
         return self[model_name].iloc[query.index]
 
-    def drop(self, model_name: str, **kwargs) -> None:
-        indexes = self.query(model_name, **kwargs).index
-        self[model_name].drop(index=indexes, inplace=True)
+    def drop(self, model_name: str, **kwargs) -> pd.DataFrame:
+        query = self.query(model_name, **kwargs)
+        self[model_name].drop(index=query.index, inplace=True)
+        return query
 
     def hydrate(self, model_name: str, **kwargs):
         return hydrate(self, model_name, self.query(model_name, **kwargs))
