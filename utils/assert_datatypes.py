@@ -34,6 +34,7 @@ def assert_datatypes(db, datatype, value, field: str) -> None:
 
     else:
         if datatype in db.models:
-            assert type(value) is str, assert_message
+            if value is not None:
+                assert type(value) is str, assert_message
         else:
             assert type(value) is datatype, assert_message
