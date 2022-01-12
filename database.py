@@ -59,27 +59,18 @@ class Database:
     def query(self, model_name: str, **kwargs) -> pd.DataFrame:
         if self.has(model_name):
             df = self[model_name]
-            keys = list(kwargs.keys())
-            for key in keys:
-                if key not in df.columns:
-                    del kwargs[key]
 
             kwargs, df = handle_sort(kwargs, df)
             kwargs, df = handle_limit(kwargs, df)
 
             for key, value in kwargs.items():
-                if isinstance(value, (list, dict)):
-                    raise TypeError('Nested value filtering is not supported.')
 
                 if '__' in key:
 
                     column, operator = key.split('__', 1)
-                    if is_datetime(value):
-                        value = pd.to_datetime(value, utc=True)
-                        df[column] = pd.to_datetime(df[column])
 
                     # FK lookup.
-                    if foreign_model := self.models[model_name].datatypes()[column] in self.models:
+                    if (foreign_model := self.models[model_name]()._schema.datatypes().get(column)) in self.models:
                         fk_df = self.query(foreign_model.__name__, **{operator: value}).pk
                         temp_column_suffix = f'_{uuid4()}'
                         df = pd.merge(left=df, right=fk_df, how='right', left_on=column, right_on='pk',

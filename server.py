@@ -120,7 +120,12 @@ class Server:
         header_results = []
         errors = {'Errors': []}
         kwargs = {}
-        for header in self.headers:
+        incoming_headers = {header.title() for header in websocket_headers.keys()}
+        local_headers = {header._name for header in self.headers}
+        selected_headers = incoming_headers & local_headers
+
+        for header_name in selected_headers:
+            header = self.headers[header_name]
             if data_string := websocket_headers.get(header._name):
                 try:
                     kwargs = json.loads(data_string)
