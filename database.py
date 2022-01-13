@@ -89,12 +89,23 @@ class Database:
         else:
             return pd.DataFrame()
 
-    def get(self, model_name, pk: str):
-        df = self.query(model_name, pk=pk)
-        if not df.empty:
-            return self.models[model_name](**df.iloc[0].to_dict())
+    def get(self, model_name, *args, **kwargs):
+        # If a pk has been given, find model by that pk
+        if args:
+            pk = args[0]
+            df = self.query(model_name, pk=pk)
+            if not df.empty:
+                return self.models[model_name](**df.iloc[0].to_dict())
 
-        return None
+        # If not, find it by kwargs
+        else:
+            df = self.query(model_name, **kwargs)
+            if (num_models := df.shape[0]) == 1:
+                return self.models[model_name](df.iloc[0].to_dict())
+            elif num_models == 0:
+                return None
+            else:
+                raise ValueError(f'{num_models} {model_name} models found.')
 
     def update(self, model_name: str, query: pd.DataFrame, **kwargs):
         instance = self.models[model_name](**kwargs)
