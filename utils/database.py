@@ -24,6 +24,7 @@ column_filters = {
     'f': lambda df, column, value: df[df[column].str.contains(value, regex=False)],  # find in column
     're': lambda df, column, value: df[df[column].str.contains(value)],  # regex in column
     'eq': lambda df, column, value: df[df[column] == value],  # equals
+    'ne': lambda df, column, value: df[df[column] != value],  # not equal
     'gt': lambda df, column, value: df[df[column] > value],  # greater than
     'lt': lambda df, column, value: df[df[column] < value],  # less than
     'ge': lambda df, column, value: df[df[column] >= value],  # greater than or equal to

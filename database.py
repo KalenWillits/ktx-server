@@ -101,7 +101,7 @@ class Database:
         else:
             df = self.query(model_name, **kwargs)
             if (num_models := df.shape[0]) == 1:
-                return self.models[model_name](df.iloc[0].to_dict())
+                return self.models[model_name](**df.iloc[0].to_dict())
             elif num_models == 0:
                 return None
             else:
@@ -187,4 +187,6 @@ class Database:
         for model in self.models:
             json_file_path = os.path.join(self.path, f'{model.__name__}.json')
             if os.path.isfile(json_file_path):
-                self[model.__name__] = pd.read_json(json_file_path, orient='records', convert_dates=False)
+                datatypes = model()._schema.datatypes()
+                self[model.__name__] = pd.read_json(json_file_path, orient='records', convert_dates=False,
+                                                    dtype=datatypes)
