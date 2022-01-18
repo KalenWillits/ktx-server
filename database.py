@@ -108,13 +108,13 @@ class Database:
                 raise ValueError(f'{num_models} {model_name} models found.')
 
     def update(self, model_name: str, query: pd.DataFrame, **kwargs):
-        instance = self.models[model_name](**kwargs)
-        datatypes = instance._schema.datatypes()
+        if query.empty:
+            return query
 
-        for key, value in kwargs.items():
-            assert_datatypes(self, datatypes[key], value, key)
+        datatypes = self.models[model_name]()._schema.datatypes()
 
         for field, value in kwargs.items():
+            assert_datatypes(self, datatypes[field], value, field)
             self[model_name][field].iloc[query.index] = [value]
 
         return self[model_name].iloc[query.index]
