@@ -19,7 +19,7 @@ class ChannelManager:
             self.__channels__[channel.__name__] = channel()
 
     def __getitem__(self, channel_name: str) -> Channel:
-        return self.__channels__[channel_name]
+        return self.__channels__.get(channel_name)
 
     def __setitem__(self, channel_name: str, channel: Channel):
         self.__channels__[channel_name] = channel
