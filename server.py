@@ -158,7 +158,7 @@ class Server:
         self.log(f'[BROADCAST] {payload} on channels {channels}')
         for channel_name in channels:
             if channel := self.channels[channel_name]:
-                for subscriber_pk in channel._subscribers:
+                for subscriber_pk in channel.subscribers:
                     if subscriber_pk in self.clients.keys():
                         asyncio.ensure_future(self.clients[subscriber_pk].send(json.dumps(payload)))
 
