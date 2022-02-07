@@ -61,12 +61,18 @@ class Model:
 class ModelManager:
     def __init__(self, *models):
         self.__models__ = models
+        self._model_names = [model.__name__ for model in models]
         for model in models:
             setattr(self, model.__name__, model)
 
     def __iter__(self):
         for model in self.__models__:
             yield model
+
+    def __contains__(self, other):
+        if type(other) is str:
+            return other in self._model_names
+        return other in self.__models__
 
     def __getitem__(self, key_or_index):
         if isinstance(key_or_index, int):

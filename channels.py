@@ -3,7 +3,7 @@
 class Channel:
     def __init__(self, name: str = None, subscribers: set = set()):
         self.subscribers = set(subscribers)
-        self.name = name if name else self.__class__.__name__
+        self.name = name.lower() if name else self.__class__.__name__.lower()
 
     def subscribe(self, websocket_pk):
         self.subscribers.add(websocket_pk)
@@ -22,7 +22,7 @@ class ChannelManager:
     def __init__(self, *channels):
         self.__channels__ = {}
         for channel in channels:
-            self.__channels__[channel.__name__] = channel()
+            self.__channels__[channel.__name__.lower()] = channel()
 
     def __getitem__(self, channel_name: str) -> Channel:
         return self.__channels__.get(channel_name)
@@ -37,8 +37,10 @@ class ChannelManager:
     def add(self, channel: Channel):
         self.__channels__[channel.name] = channel
 
-    def drop(self, channel_name: str):
-        del self.__channels__[channel_name]
+    def drop(self, *channel_names: list[str, ...]):
+        for channel_name in channel_names:
+            if channel_name in self.__channels__.keys():
+                del self.__channels__[channel_name]
 
     def create(self, channel_name: str, subscribers: set):
         if (invalid_type := type(subscribers)) is not set:

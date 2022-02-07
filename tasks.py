@@ -76,7 +76,7 @@ class TaskManager:
 
     def execute_startup_tasks(self, **kwargs):
         for task in self.__tasks__[TaskTypes.STARTUP.value]:
-            asyncio.ensure_future(task.execute(**kwargs))
+            task.execute(**kwargs)
 
     async def schedule_task(self, task, **kwargs):
         await asyncio.sleep(task.timer(**kwargs))
@@ -92,4 +92,4 @@ class TaskManager:
 
     def execute_shutdown_tasks(self, **kwargs):
         for task in self.__tasks__[TaskTypes.SHUTDOWN.value]:
-            asyncio.ensure_future(task.execute(**kwargs))
+            task.execute(**kwargs)
