@@ -26,7 +26,6 @@ class Schema:
             if field[0] == '_':
                 continue
 
-
             # Gathering and formatting datatypes for properties
             if hasattr(self.instance.__class__, field):
                 field_value = getattr(self.instance.__class__, field)
@@ -77,14 +76,16 @@ class Schema:
 
         return default_values_dict
 
-    def items(self):
+    def items(self, fields: list = None):
         try:
             datatypes = self.datatypes()
             default_values = self.default_values()
-            for field in self.fields():
-                yield field, datatypes[field], default_values[field]
+            if fields is not None:
+                for field in fields:
+                    yield field, datatypes[field], default_values[field]
+            else:
+                for field in self.fields():
+                    yield field, datatypes[field], default_values[field]
 
-        except KeyError as error:
-            raise KeyError(error)
-            raise Exception(f'Model {self.instance._name} field {field} has been set up incorrectly')
-
+        except KeyError:
+            raise KeyError(f'Model {self.instance._name} field {field} has been set up incorrectly')

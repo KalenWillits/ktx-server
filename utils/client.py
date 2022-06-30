@@ -66,16 +66,16 @@ class Client:
         self.commands = commands
         self.headers = headers
         self.sender = Sender(f'{protocol}://{host}:{port}', commands=commands, headers=headers)
-        self.reciever = Reciever(f'{protocol}://{host}:{port}', headers=headers)
+        self.receiver = Reciever(f'{protocol}://{host}:{port}', headers=headers)
 
     async def run_sender(self):
         loop = asyncio.get_event_loop()
         loop.run_until_complete(await self.sender.run())
         loop.run_forever()
 
-    async def run_reciever(self):
+    async def run_receiver(self):
         loop = asyncio.get_event_loop()
-        loop.run_until_complete(await self.reciever.run())
+        loop.run_until_complete(await self.receiver.run())
         loop.run_forever()
 
     def run(self):
@@ -86,5 +86,5 @@ class Client:
         if args.cmd == 'sender':
             asyncio.run(self.run_sender())
 
-        elif args.cmd == 'reciever':
-            asyncio.run(self.run_reciever())
+        elif args.cmd == 'receiver':
+            asyncio.run(self.run_receiver())

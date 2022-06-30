@@ -1,7 +1,7 @@
 from .assert_datatypes import assert_datatypes
-from .client import Client
 from .database import handle_sort, handle_limit, column_filters
 from .encrypt import encrypt
+from .options import options
 from .file_to_string import file_to_string
 from .hydrate import hydrate, parse_datatype, retrieve_foreign_data, CORE_TYPES, OUTER_TYPES
 from .is_datetime import is_datetime

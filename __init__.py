@@ -1,4 +1,4 @@
-from .actions import ActionManager, Action
+from .signals import SignalManager, Signal
 from .channels import ChannelManager, Channel
 from .database import Database
 from .headers import HeaderManager, Header

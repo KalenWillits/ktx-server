@@ -33,7 +33,7 @@ class Database:
         self.load()
 
     def __setitem__(self, key, value):
-            self.__dict__[key] = value
+        self.__dict__[key] = value
 
     def __getitem__(self, key):
         return self.__dict__[key]
@@ -54,7 +54,7 @@ class Database:
         df = instance._to_df()
 
         if self.has(model_name):
-            self[model_name] = self[model_name].append(df, ignore_index=True)
+            self[model_name] = pd.concat([self[model_name], df], ignore_index=True)
         else:
             self[model_name] = df
         return instance
@@ -128,7 +128,7 @@ class Database:
 
     def drop(self, model_name: str, query: pd.DataFrame, cascade: list[str, ...] = []) -> pd.DataFrame:
         '''
-        Deletes entries from the databse based on the input query's index.
+        Deletes entries from the database based on the input query's index.
         :param cascade: list of strings representing fk fields to cascade the drop method to.
         '''
         if query.empty:
@@ -151,6 +151,11 @@ class Database:
 
         self[model_name].drop(index=query.index, inplace=True)
 
+    def get_or_create(self, model_name: str, **kwargs):
+        if not (query := self.query(model_name, **kwargs)).empty:
+            return self.models[model_name](**query.iloc[0].to_dict())
+        return self.create(model_name, **kwargs)
+
     def archive(self, model_name: str, query: pd.DataFrame, cascade=False):
         assert self.models[model_name], f'Uknown model "{model_name}"'
 
@@ -162,9 +167,8 @@ class Database:
             query.to_json(json_file_path, orient='records', indent=4)
             self.drop(model_name, '')
 
-
-    def hydrate(self, model_name: str, **kwargs):
-        return hydrate(self, model_name, self.query(model_name, **kwargs))
+    def hydrate(self, model_name: str, query: pd.DataFrame):
+        return [*hydrate(self, model_name, query)]
 
     def init_table(self, model):
         self[model.__name__] = model()._to_df().iloc[0:0]

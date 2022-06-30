@@ -4,6 +4,8 @@ from .utils import to_snake, Schema
 
 
 class Model:
+    pk: str
+
     def __init__(self, **kwargs):
         self._schema = Schema(self)
         self._name = self.__class__.__name__

@@ -92,8 +92,7 @@ def hydrate(db, model_name: str, df: pd.DataFrame):
     instance = db.models[model_name]()
     for index in range(df.shape[0]):
         record = df.iloc[index].to_dict()
-        for field, datatype, default_value in instance._schema.items():
-
+        for field, datatype, default_value in instance._schema.items(df.columns):
             if hasattr(datatype, '__origin__'):
                 outer_type = datatype.__origin__
                 inner_types = datatype.__args__

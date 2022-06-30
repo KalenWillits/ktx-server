@@ -1,7 +1,7 @@
 import os
 import asyncio
-import json
-from json import JSONDecodeError
+import orjson
+from orjson import JSONDecodeError
 from uuid import uuid4
 import argparse
 
@@ -11,7 +11,7 @@ import websockets
 from .utils import on_connect, on_disconnect, on_log
 from .channels import ChannelManager
 from .models import ModelManager
-from .actions import ActionManager
+from .signals import SignalManager
 from .tasks import TaskManager
 from .headers import HeaderManager
 from .database import Database
@@ -38,7 +38,7 @@ class Server:
         disconnect=on_disconnect,
         channels: ChannelManager = ChannelManager(),
         models: ModelManager = ModelManager(),
-        actions: ActionManager = ActionManager(),
+        signals: SignalManager = SignalManager(),
         tasks: TaskManager = TaskManager(),
         headers: HeaderManager = HeaderManager(),
 
@@ -58,7 +58,7 @@ class Server:
 
         self.tasks = tasks
         self.models = models
-        self.actions = actions
+        self.signals = signals
         self.channels = channels
         self.trust = trust
         self.headers = headers
@@ -113,7 +113,7 @@ class Server:
             header = self.headers[header_name]
             if data_string := websocket_headers.get(header._name):
                 try:
-                    kwargs = json.loads(data_string)
+                    kwargs = orjson.loads(data_string.replace('\'', '\"'))
                 except (TypeError, JSONDecodeError):
                     kwargs = {'header': data_string}
 
@@ -141,7 +141,7 @@ class Server:
                     raise error
 
         if errors['Errors']:
-            asyncio.ensure_future(websocket.send(json.dumps(errors)))
+            asyncio.ensure_future(websocket.send(orjson.dumps(errors)))
 
         return self.gate(header_results)
 
@@ -154,7 +154,7 @@ class Server:
             if channel := self.channels[channel_name]:
                 for subscriber_pk in channel.subscribers:
                     if subscriber_pk in self.clients.keys():
-                        asyncio.ensure_future(self.clients[subscriber_pk].send(json.dumps(payload)))
+                        asyncio.ensure_future(self.clients[subscriber_pk].send(orjson.dumps(payload)))
 
             else:
                 self.log(status='CHANNEL-NOT-FOUND', data={'channel': channel_name}, sv=self, db=self.database)
@@ -185,36 +185,36 @@ class Server:
                     response = []
                     channels = set()
                     errors = {'Errors': []}
-                    incoming_actions = json.loads(payload)
-                    if isinstance(incoming_actions, dict):
-                        incoming_actions = [incoming_actions]
+                    incoming_signals = orjson.loads(payload)
+                    if isinstance(incoming_signals, dict):
+                        incoming_signals = [incoming_signals]
 
-                    for incoming_action in incoming_actions:
-                        action_name = next(iter(incoming_action.keys()), None)
+                    for incoming_signal in incoming_signals:
+                        signal_name = next(iter(incoming_signal.keys()), None)
                         self.log(
-                            status='ACTION',
-                            data=incoming_action,
+                            status='SIGNAL',
+                            data=incoming_signal,
                             sv=self,
                             ws=websocket,
                             db=self.database,
                         )
-                        if action := self.actions[action_name]:
+                        if signal := self.signals[signal_name]:
                             try:
-                                data, action_channels = action.execute(
+                                data, signal_channels = signal.execute(
                                     ws=websocket,
                                     sv=self,
                                     db=self.database,
-                                    **incoming_action.get(action_name))
+                                    **incoming_signal.get(signal_name))
 
                                 response.append(data)
-                                channels.update(action_channels)
+                                channels.update(signal_channels)
                             except Exception as error:
                                 errors['Errors'].extend(error.args)
                                 if self.debug:
                                     raise error
 
                         else:
-                            await websocket.send(json.dumps([{'Errors': [f'No action [{action_name}]']}]))
+                            await websocket.send(orjson.dumps([{'Errors': [f'No signal [{signal_name}]']}]))
 
                     if errors['Errors']:
                         response.append(errors)
