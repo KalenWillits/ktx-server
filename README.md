@@ -1,4 +1,4 @@
-# leviathan
+# ktx-server
 Backend Websocket server for simple db access using websocket connects for top performance. 
 
 
@@ -7,7 +7,7 @@ Backend Websocket server for simple db access using websocket connects for top p
 ```
 # main.py
 
-from leviathan import Database, Server, ModelManager, SignalManager, TaskManager, ChannelManager, HeaderManager
+from ktx-server import Database, Server, ModelManager, SignalManager, TaskManager, ChannelManager, HeaderManager
 
 models = ModelManager()
 signals = SignalManager()
@@ -23,9 +23,9 @@ Usage: `python main.py run`
 
 
 ### Abstract 
-Augur is a websocket server framework written in Python designed to handle small and medium sized data sets. 
+ktx-server is a websocket server framework written in Python designed to handle small and medium sized data sets. 
 The database is powered by Pandas and lives in memory at run time. When a server shutdown event occurs, the data is 
-written to disk in csv files. One csv for each DataFrame. Server intersignal is made from four building blocks. Models, 
+written to disk in csv files. One csv for each DataFrame. Server interaction is made from four building blocks. Models, 
 signals, tasks, and channels. 
 	- Models are class representations of tables in the database. Class names define the name of the table, and
 	  static attributes define each field. fields can also be defined by properties by using the property method.
@@ -42,7 +42,7 @@ signals, tasks, and channels.
 	  can be defined dynammically by using the *set* method. This method should return the interval in seconds
 	  as an integer. Task *execute* methods are asyncronous.
 	  
-	- Channels are the control gate for clients recieving information from an signal response. At least one channel
+	- Channels are the control gate for clients receiving information from an signal response. At least one channel
  	  and one subscribe signal is required for server communication to occur. Clients can be in as many or no 
 	  channels, however each client can only be in any channel once. 
 
@@ -52,7 +52,7 @@ signals, tasks, and channels.
 	  function that accepts an iterable and returns a boolean value. By default headers are an empty list and
 	  the gate is an `all()` function. When header data is received, it is sent in the format: 
 	  `HEADER_NAME:JSON_STRING`.
-	- Intersignal with the database requires some knowledge with pandas. However, there are some helper functions
+	- Interaction with the database requires some knowledge with pandas. However, there are some helper functions
 	  for most simple operations. The database is passed as `db` and is a base class with each table as an 
 	  attribute. Each table is a pandas DataFrame.
 	

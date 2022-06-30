@@ -10,6 +10,7 @@ setup(
     name='ktx-server',
     version=VERSION,
     author='Kilthunox',
+    url='https://github.com/KalenWillits/ktx-server',
     author_email='<kalenwillits@gmail.com>',
     description=DESCRIPTION,
     long_description_content_type="text/markdown",
