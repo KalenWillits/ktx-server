@@ -1,4 +1,4 @@
-# ktx-server
+# lexicons
 Backend Websocket server for simple db access using websocket connects for top performance. 
 
 
@@ -7,7 +7,7 @@ Backend Websocket server for simple db access using websocket connects for top p
 ```
 # main.py
 
-from ktx-server import Database, Server, ModelManager, SignalManager, TaskManager, ChannelManager, HeaderManager
+from lexicons import Database, Server, ModelManager, SignalManager, TaskManager, ChannelManager, HeaderManager
 
 models = ModelManager()
 signals = SignalManager()
@@ -23,7 +23,7 @@ Usage: `python main.py run`
 
 
 ### Abstract 
-ktx-server is a websocket server framework written in Python designed to handle small and medium sized data sets. 
+lexicons is a websocket server framework written in Python designed to handle small and medium sized data sets. 
 The database is powered by Pandas and lives in memory at run time. When a server shutdown event occurs, the data is 
 written to disk in csv files. One csv for each DataFrame. Server interaction is made from four building blocks. Models, 
 signals, tasks, and channels. 

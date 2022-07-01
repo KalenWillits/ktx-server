@@ -4,15 +4,18 @@ import os
 
 VERSION = '0.0.1'
 DESCRIPTION = 'Weboscket server framework for highly dynamic communication.'
+with open('README.md') as readme:
+    LONG_DESCRIPTION=readme.read()
 
 # Setting up
 setup(
-    name='ktx-server',
+    name='lexicons',
     version=VERSION,
     author='Kilthunox',
-    url='https://github.com/KalenWillits/ktx-server',
+    url='https://github.com/KalenWillits/lexicons',
     author_email='<kalenwillits@gmail.com>',
     description=DESCRIPTION,
+    long_description=LONG_DESCRIPTION,
     long_description_content_type="text/markdown",
     packages=find_packages(),
     install_requires=[
@@ -30,3 +33,5 @@ setup(
         'Operating System :: Microsoft :: Windows',
     ]
 )
+
+
