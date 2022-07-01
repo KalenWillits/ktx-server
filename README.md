@@ -1,5 +1,5 @@
 # lexicons
-Backend Websocket server for simple db access using websocket connects for top performance. 
+Backend Websocket server for simple db access and rapid development.
 
 
 ### Getting Started
