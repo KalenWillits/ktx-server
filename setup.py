@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 import codecs
 import os
 
-VERSION = '0.0.1'
+VERSION = '0.0.2'
 DESCRIPTION = 'Weboscket server framework for highly dynamic communication.'
 with open('README.md') as readme:
     LONG_DESCRIPTION=readme.read()
@@ -20,7 +20,7 @@ setup(
     packages=find_packages(),
     install_requires=[
         'pandas',
-        'websockets'
+        'websockets',
         'orjson',
     ],
     keywords=['python', 'websockets', 'server'],
