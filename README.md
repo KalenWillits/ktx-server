@@ -157,7 +157,7 @@ class CreateChatMessage(Signal):
 
 ### Tasks
 ```
-from packages.leviathan import Task
+from packages.lexicons import Task
 
 
 class OnShutdown(Task.Shutdown):
