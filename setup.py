@@ -7,7 +7,7 @@ DESCRIPTION = 'Weboscket server framework for highly dynamic communication.'
 
 # Setting up
 setup(
-    name='ktx-server',
+    name='ktxserver',
     version=VERSION,
     author='Kilthunox',
     url='https://github.com/KalenWillits/ktx-server',
