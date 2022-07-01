@@ -1,28 +1,33 @@
 # lexicons
-Backend Websocket server for simple db access and rapid development.
+Backend Websocket server for simple db access and rapid development. 
+**This project is currently in the prototype phase and the documentation is incomplete.**
 
 
-### Getting Started
+# Getting Started
 
 ```
 # main.py
 
 from lexicons import Database, Server, ModelManager, SignalManager, TaskManager, ChannelManager, HeaderManager
 
+headers = HeaderManager()
 models = ModelManager()
 signals = SignalManager()
 tasks = TaskManager()
 channels = ChannelManager()
 
-server = Server(protocol='ws', host='localhost', port=5000, models=models, tasks=tasks, signals=signals, headers=headers, channels=channels, data="data/", trust=[])
+server = Server(protocol='ws', host='localhost', port=5000, models=models, tasks=tasks, signals=signals, 
+		headers=headers, channels=channels, data="data/", trust=[])
 
 if __name__ == "__main__":
     server.run()
 ```
-Usage: `python main.py run`
+
+# Usage
+`python main.py run`
 
 
-### Abstract 
+# Abstract 
 lexicons is a websocket server framework written in Python designed to handle small and medium sized data sets. 
 The database is powered by Pandas and lives in memory at run time. When a server shutdown event occurs, the data is 
 written to disk in csv files. One csv for each DataFrame. Server interaction is made from four building blocks. Models, 
@@ -66,3 +71,116 @@ signals, tasks, and channels.
 	- bool
 	- list
 	- set
+
+
+# Examples
+
+### Headers
+```
+import orjson
+import asyncio
+from datetime import datetime
+
+from packages.lexicons import Header
+from packages.lexicons.utils import encrypt
+
+
+class Login(Header):
+    def execute(self, email=None, password=None, db=None, ws=None, sv=None, **kwargs):
+        if not (email and password):
+            return False
+        password = encrypt(password)
+        user = db.get('User', email=email, password=password)
+
+        if user:
+	    ws.auth = user.pk
+            return True
+
+        asyncio.ensure_future(ws.send(orjson.dumps([{'Errors': ['Authentication failed']}])))
+
+        return False
+```
+
+### Models
+```
+from packages.lexicons import Model
+from packages.lexicons.utils import encrypt
+
+
+class User(Model):
+    email: str
+
+    @property
+    def password(self) -> str:
+        if hasattr(self, '_password'):
+            return self._password
+        else:
+            return None
+
+    @password.setter
+    def password(self, raw_password: str):
+        setattr(self, '_password', encrypt(raw_password))
+
+
+class ChatMessage(Model):
+    author: User
+    channel: str
+    content: str
+
+```
+
+### Channels
+```
+from packages.lexicons import Channel
+
+
+class Public(Channel):
+    pass
+
+```
+
+### Signals
+```
+from datetime import datetime
+
+from packages.lexicons import Signal
+
+
+class CreateChatMessage(Signal):
+    def execute(self, channel=None, content=None, db=None, ws=None, **kwargs):
+        timestamp = datetime.now().timestamp()
+        message = db.create('ChatMessage', channel=channel, content=content, author=ws.auth,
+                            timestamp=timestamp)
+	
+        return self.response(message._to_dict(), [channel])
+```
+
+### Tasks
+```
+from packages.leviathan import Task
+
+
+class OnShutdown(Task.Shutdown):
+    priority = 0
+
+    def execute(self, db=None, **kwargs):
+	pass
+```
+
+### Installing components to server
+```
+from lexicons import Database, Server, ModelManager, SignalManager, TaskManager, ChannelManager, HeaderManager
+
+headers = HeaderManager(Login)
+models = ModelManager(User, ChatMessage)
+signals = SignalManager(CreateChatMessage)
+tasks = TaskManager(OnShutdown)
+channels = ChannelManager(Public)
+
+server = Server(protocol='ws', host='localhost', port=5000, models=models, tasks=tasks, signals=signals, 
+		headers=headers, channels=channels, data="data/", trust=[])
+
+if __name__ == "__main__":
+    server.run()
+
+```
