@@ -18,6 +18,7 @@ setup(
     install_requires=[
         'pandas',
         'websockets'
+        'orjson',
     ],
     keywords=['python', 'websockets', 'server'],
     classifiers=[
