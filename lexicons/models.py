@@ -51,6 +51,9 @@ class Model:
         df = pd.DataFrame([self._to_dict()])
         return df
 
+    def _fields(self) -> list[str]:
+        return self._schema.fields()
+
     def __repr__(self):
         df = self._to_df().transpose()
         df.columns = [self._name]

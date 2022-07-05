@@ -3,12 +3,12 @@ Backend Websocket server for simple db access and rapid development.
 **This project is currently in the prototype phase and the documentation is incomplete.**
 
 
-# Getting Started
+# Quick Start
 
 ```
 # main.py
 
-from lexicons import Database, Server, ModelManager, SignalManager, TaskManager, ChannelManager, HeaderManager
+from lexicons import Server, ModelManager, SignalManager, TaskManager, ChannelManager, HeaderManager
 
 headers = HeaderManager()
 models = ModelManager()
@@ -16,8 +16,15 @@ signals = SignalManager()
 tasks = TaskManager()
 channels = ChannelManager()
 
+
+def on_start(sv=None, db=None):
+	db.load()
+
+def on_shutdown(sv=None, db=None):
+	db.save()
+
 server = Server(protocol='ws', host='localhost', port=5000, models=models, tasks=tasks, signals=signals, 
-		headers=headers, channels=channels, data="data/", trust=[])
+		headers=headers, channels=channels, data="data/", trust=[], on_start=on_start, on_shutdown=on_shutdown)
 
 if __name__ == "__main__":
     server.run()
@@ -28,9 +35,13 @@ if __name__ == "__main__":
 
 
 # Abstract 
-lexicons is a websocket server framework written in Python designed to handle small and medium sized data sets. 
-The database is powered by Pandas and lives in memory at run time. When a server shutdown event occurs, the data is 
-written to disk in csv files. One csv for each DataFrame. Server interaction is made from four building blocks. Models, 
+Lexicons is a stateless websocket server framework written in Python designed to handle small and medium sized data 
+sets. The relational database is powered by Pandas and lives in memory at run time. Only json data types are supported. 
+By default, the server is stateless and data will need to be populated on each restart. However, runtime hooks such as 
+on_start, on_connect, on_disconnect, and on_shutdown can be configured to change the behavior if needed.
+
+
+Server interaction is made from four building blocks. Models, 
 signals, tasks, and channels. 
 	- Models are class representations of tables in the database. Class names define the name of the table, and
 	  static attributes define each field. fields can also be defined by properties by using the property method.
