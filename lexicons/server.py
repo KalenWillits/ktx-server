@@ -27,7 +27,7 @@ class Server:
         on_log=on_log,
         database: Database = None,
         data: str = os.environ.get('DATA', './'),
-        trust: list[str, ...] = os.environ.get('TRUST', []),
+        trust: list[str, ...] = os.environ.get('TRUST', ['*']),
         gate: callable = all,
         cache: dict = {},
         on_connect=on_connect,
@@ -91,7 +91,7 @@ class Server:
         self.database.save()
 
     def check_if_trusted(self, websocket) -> bool:
-        if websocket.remote_address[0] in self.trust or not self.trust:
+        if websocket.remote_address[0] in self.trust or '*' in self.trust:
             return True
 
         self.on_log(status='UNTRUSTED-SOURCE-DENIED', data={
