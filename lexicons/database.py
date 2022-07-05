@@ -30,8 +30,6 @@ class Database:
         self.archive_path = archive_path
         self.archive_limit = archive_limit
 
-        self.load()
-
     def __setitem__(self, key, value):
         self.__dict__[key] = value
 

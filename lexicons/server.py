@@ -8,7 +8,7 @@ import argparse
 from IPython import embed
 import websockets
 
-from .utils import on_connect, on_disconnect, on_log
+from .utils import on_connect, on_disconnect, on_start, on_shutdown, on_log
 from .channels import ChannelManager
 from .models import ModelManager
 from .signals import SignalManager
@@ -28,14 +28,16 @@ class Server:
         host: str = os.environ.get('HOST', 'localhost'),
         port: int = os.environ.get('PORT', 5000),
         debug: bool = os.environ.get('DEBUG', True),
-        log=on_log,
+        on_log=on_log,
         database: Database = None,
         data: str = os.environ.get('DATA', './'),
         trust: list[str, ...] = os.environ.get('TRUST', []),
         gate: callable = all,
         cache: dict = {},
-        connect=on_connect,
-        disconnect=on_disconnect,
+        on_connect=on_connect,
+        on_disconnect=on_disconnect,
+        on_start=on_start,
+        on_shutdown=on_shutdown,
         channels: ChannelManager = ChannelManager(),
         models: ModelManager = ModelManager(),
         signals: SignalManager = SignalManager(),
@@ -63,9 +65,11 @@ class Server:
         self.trust = trust
         self.headers = headers
         self.gate = gate
-        self.connect = connect
-        self.disconnect = disconnect
-        self.log = log
+        self.on_connect = on_connect
+        self.on_disconnect = on_disconnect
+        self.on_start = on_start
+        self.on_shutdown = on_shutdown
+        self.on_log = on_log
         self.commands = {
             'run': self.run_default(),
             'shell': self.run_shell,
@@ -95,7 +99,7 @@ class Server:
         if websocket.remote_address[0] in self.trust or not self.trust:
             return True
 
-        self.log(status='UNTRUSTED-SOURCE-DENIED', data={
+        self.on_log(status='UNTRUSTED-SOURCE-DENIED', data={
             'address': websocket.remote_address,
         }, sv=self, db=self.database,
                  ws=websocket)
@@ -127,7 +131,7 @@ class Server:
                 header_results.append(header_function_result)
 
                 if not header_function_result:
-                    self.log(
+                    self.on_log(
                         status='HEADER-CHECK-FAILED',
                         data={
                             'header': header._name,
@@ -146,7 +150,7 @@ class Server:
         return self.gate(header_results)
 
     def broadcast(self, payload: dict, channels: list):
-        self.log(status='BROADCAST', data={
+        self.on_log(status='BROADCAST', data={
             'payload': payload,
             'channels': channels,
         }, sv=self, db=self.database)
@@ -157,28 +161,28 @@ class Server:
                         asyncio.ensure_future(self.clients[subscriber_pk].send(orjson.dumps(payload)))
 
             else:
-                self.log(status='CHANNEL-NOT-FOUND', data={'channel': channel_name}, sv=self, db=self.database)
+                self.on_log(status='CHANNEL-NOT-FOUND', data={'channel': channel_name}, sv=self, db=self.database)
 
     async def register(self, websocket):
-        self.log(status='REGISTER-NEW-CONNECTION', data={'address': websocket.remote_address}, sv=self,
+        self.on_log(status='REGISTER-NEW-CONNECTION', data={'address': websocket.remote_address}, sv=self,
                  db=self.database,
                  ws=websocket)
         self.clients[websocket.pk] = websocket
 
     async def unregister(self, websocket):
-        self.log(status='UNREGISTER-CLOSE-CONNECTION', data={'address': websocket.remote_address}, sv=self,
+        self.on_log(status='UNREGISTER-CLOSE-CONNECTION', data={'address': websocket.remote_address}, sv=self,
                  db=self.database,
                  ws=websocket)
         del self.clients[websocket.pk]
         self.channels.unregister(websocket.pk)
 
     async def handle(self, websocket, host):
-        self.log(status='HANDLE-CONNECTION', data={'address': websocket.remote_address}, sv=self, db=self.database,
+        self.on_log(status='HANDLE-CONNECTION', data={'address': websocket.remote_address}, sv=self, db=self.database,
                  ws=websocket)
         websocket.pk = str(uuid4())
 
         if self.check_if_trusted(websocket) and self.handle_headers(websocket.request_headers, websocket=websocket):
-            self.connect(ws=websocket, sv=self, db=self.database)
+            self.on_connect(ws=websocket, sv=self, db=self.database)
             await self.register(websocket)
             try:
                 async for payload in websocket:
@@ -191,7 +195,7 @@ class Server:
 
                     for incoming_signal in incoming_signals:
                         signal_name = next(iter(incoming_signal.keys()), None)
-                        self.log(
+                        self.on_log(
                             status='SIGNAL',
                             data=incoming_signal,
                             sv=self,
@@ -223,8 +227,8 @@ class Server:
                     self.broadcast(response, list(channels))
 
             finally:
-                self.disconnect(ws=websocket, sv=self, db=self.database)
-                self.log(status='CONNECTION CLOSED', data=websocket.remote_address, sv=self, db=self.database,
+                self.on_disconnect(ws=websocket, sv=self, db=self.database)
+                self.on_log(status='CONNECTION CLOSED', data=websocket.remote_address, sv=self, db=self.database,
                          ws=websocket)
                 await self.unregister(websocket)
 
@@ -239,6 +243,8 @@ class Server:
         self.host = args.host
         self.debug = args.debug
 
+        self.on_start(sv=self, db=self.database)
+
         if args.cmd == 'shell':
             self.commands.get('shell')()
 
@@ -247,7 +253,7 @@ class Server:
 
         elif init_function := self.commands.get(args.cmd):
             try:
-                self.log(status='STARTING', sv=self, db=self.database)
+                self.on_log(status='STARTING', sv=self, db=self.database)
                 self.database.migrate()
                 self.tasks.execute_startup_tasks(
                     db=self.database,
@@ -261,15 +267,16 @@ class Server:
                 asyncio.get_event_loop().run_forever()
 
             except KeyboardInterrupt:
-                self.log(status='SHUTDOWN', sv=self, db=self.database)
+                self.on_log(status='SHUTDOWN', sv=self, db=self.database)
 
             finally:
-                self.log(status='CLEANUP-TASKS-STARTED', sv=self, db=self.database)
+                self.on_log(status='CLEANUP-TASKS-STARTED', sv=self, db=self.database)
                 self.tasks.execute_shutdown_tasks(
                     db=self.database,
                     sv=self)
 
-                self.database.save()
-                self.log(status='CLEANUP-TASKS-COMPLETE', sv=self, db=self.database)
+                self.on_log(status='CLEANUP-TASKS-COMPLETE', sv=self, db=self.database)
+
+                self.on_shutdown(sv=self, db=self.database)
         else:
-            self.log(status='ERROR', data={'arg': args.cmd}, sv=self, db=self.database)
+            self.on_log(status='ERROR', data={'arg': args.cmd}, sv=self, db=self.database)

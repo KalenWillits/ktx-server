@@ -13,6 +13,6 @@ from .parse_nums import parse_nums
 from .parse_set import parse_set
 from .resolve_default_value import resolve_default_value
 from .schema import Schema
-from .server import on_connect, on_disconnect, on_log
+from .server import on_start, on_shutdown, on_connect, on_disconnect, on_log
 from .string_to_file import string_to_file
 from .to_snake import to_snake
