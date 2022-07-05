@@ -29,22 +29,20 @@ class Server:
         data: str = os.environ.get('DATA', './'),
         trust: list[str, ...] = os.environ.get('TRUST', ['*']),
         gate: callable = all,
-        cache: dict = {},
         on_connect=on_connect,
         on_disconnect=on_disconnect,
         on_start=on_start,
         on_shutdown=on_shutdown,
-        channels: ChannelManager = ChannelManager(),
-        models: ModelManager = ModelManager(),
-        signals: SignalManager = SignalManager(),
-        tasks: TaskManager = TaskManager(),
-        headers: HeaderManager = HeaderManager(),
+        channels: list = [],
+        models: list = [],
+        signals: list = [],
+        tasks: list = [],
+        headers: list = [],
 
     ):
         self.host = host
         self.port = port
         self.debug = debug
-        self.cache = cache
 
         self.clients = {}
 
@@ -53,18 +51,20 @@ class Server:
         else:
             self.database = Database(models=models, path=data)
 
-        self.tasks = tasks
-        self.models = models
-        self.signals = signals
-        self.channels = channels
-        self.trust = trust
-        self.headers = headers
-        self.gate = gate
+        self.tasks = TaskManager(*tasks)
+        self.models = ModelManager(*models)
+        self.signals = SignalManager(*signals)
+        self.channels = ChannelManager(*channels)
+        self.headers = HeaderManager(*headers)
+
         self.on_connect = on_connect
         self.on_disconnect = on_disconnect
         self.on_start = on_start
         self.on_shutdown = on_shutdown
         self.on_log = on_log
+
+        self.trust = trust
+        self.gate = gate
         self.commands = {
             'run': self.run_default(),
             'shell': self.run_shell,

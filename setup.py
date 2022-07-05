@@ -2,8 +2,8 @@ from setuptools import setup, find_packages
 import codecs
 import os
 
-VERSION = '0.0.3'
-DESCRIPTION = 'Weboscket server framework for highly dynamic communication.'
+VERSION = '0.1.3'
+DESCRIPTION = 'Stateless weboscket server framework for highly dynamic communication.'
 with open('README.md') as readme:
     LONG_DESCRIPTION=readme.read()
 

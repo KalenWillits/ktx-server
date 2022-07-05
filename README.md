@@ -7,31 +7,39 @@ Backend Websocket server for simple db access and rapid development.
 
 ```
 # main.py
-
-from lexicons import Server, ModelManager, SignalManager, TaskManager, ChannelManager, HeaderManager
-
-headers = HeaderManager()
-models = ModelManager()
-signals = SignalManager()
-tasks = TaskManager()
-channels = ChannelManager()
+from lexicons import Server, Signal, Channel
 
 
-def on_start(sv=None, db=None):
-	db.load()
+class Public(Channel):
+    pass
 
-def on_shutdown(sv=None, db=None):
-	db.save()
 
-server = Server(protocol='ws', host='localhost', port=5000, models=models, tasks=tasks, signals=signals, 
-		headers=headers, channels=channels, data="data/", trust=[], on_start=on_start, on_shutdown=on_shutdown)
+def on_connect(ws=None, sv=None, db=None):
+    sv.channels['Public'].subscribe(ws.pk)
 
-if __name__ == "__main__":
+
+class GetData(Signal):
+    def execute(self, ws=None, **kwargs):
+        return self.response('Hello World!', ['Public'])
+
+
+server = Server(
+        signals=[GetData],
+        channels=[Public],
+        on_connect=on_connect,
+    )
+
+if __name__ == '__main__':
     server.run()
 ```
 
 # Usage
+## Start the server
 `python main.py run`
+
+## Drop into the shell
+`python main.py shell`
+global variables db and sv for database and server.
 
 
 # Abstract 
@@ -62,12 +70,12 @@ signals, tasks, and channels.
  	  and one subscribe signal is required for server communication to occur. Clients can be in as many or no 
 	  channels, however each client can only be in any channel once. 
 
-### Special Notes:
-	- Authentication is handled in the connection headers by defining headers and gate arguments to Server.
+	- Headers handle security checks and act as one-way endpoints.
 	  headers is a list of functions that accept **kwargs and return a boolean value. The gate argument is a 
 	  function that accepts an iterable and returns a boolean value. By default headers are an empty list and
 	  the gate is an `all()` function. When header data is received, it is sent in the format: 
 	  `HEADER_NAME:JSON_STRING`.
+
 	- Interaction with the database requires some knowledge with pandas. However, there are some helper functions
 	  for most simple operations. The database is passed as `db` and is a base class with each table as an 
 	  attribute. Each table is a pandas DataFrame.
@@ -84,119 +92,9 @@ signals, tasks, and channels.
 	- set
 
 
-# Examples
-
-### Headers
-```
-import orjson
-import asyncio
-from datetime import datetime
-
-from packages.lexicons import Header
-from packages.lexicons.utils import encrypt
-
-
-class Login(Header):
-    def execute(self, email=None, password=None, db=None, ws=None, sv=None, **kwargs):
-        if not (email and password):
-            return False
-        password = encrypt(password)
-        user = db.get('User', email=email, password=password)
-
-        if user:
-	    ws.auth = user.pk
-            return True
-
-        asyncio.ensure_future(ws.send(orjson.dumps([{'Errors': ['Authentication failed']}])))
-
-        return False
-```
-
-### Models
-```
-from packages.lexicons import Model
-from packages.lexicons.utils import encrypt
-
-
-class User(Model):
-    email: str
-
-    @property
-    def password(self) -> str:
-        if hasattr(self, '_password'):
-            return self._password
-        else:
-            return None
-
-    @password.setter
-    def password(self, raw_password: str):
-        setattr(self, '_password', encrypt(raw_password))
-
-
-class ChatMessage(Model):
-    author: User
-    channel: str
-    content: str
-
-```
-
-### Channels
-```
-from packages.lexicons import Channel
-
-
-class Public(Channel):
-    pass
-
-```
-
-### Signals
-```
-from datetime import datetime
-
-from packages.lexicons import Signal
-
-
-class CreateChatMessage(Signal):
-    def execute(self, channel=None, content=None, db=None, ws=None, **kwargs):
-        timestamp = datetime.now().timestamp()
-        message = db.create('ChatMessage', channel=channel, content=content, author=ws.auth,
-                            timestamp=timestamp)
-	
-        return self.response(message._to_dict(), [channel])
-```
-
-### Tasks
-```
-from packages.lexicons import Task
-
-
-class OnShutdown(Task.Shutdown):
-    priority = 0
-
-    def execute(self, db=None, **kwargs):
-	pass
-```
-
-### Installing components to server
-```
-from lexicons import Server, ModelManager, SignalManager, TaskManager, ChannelManager, HeaderManager
-
-headers = HeaderManager(Login)
-models = ModelManager(User, ChatMessage)
-signals = SignalManager(CreateChatMessage)
-tasks = TaskManager(OnShutdown)
-channels = ChannelManager(Public)
-
-server = Server(protocol='ws', host='localhost', port=5000, models=models, tasks=tasks, signals=signals, 
-		headers=headers, channels=channels, data="data/", trust=[])
-
-if __name__ == "__main__":
-    server.run()
-
-```
-
 
 # TODO 
+- [] Complete base documentation
+- [] Write use-case examples
 - [] Create script for starting a new project
 - [] Create frontend websocket client for testing interaction
