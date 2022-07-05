@@ -2,7 +2,16 @@
 
 Entry point of the application.
 
-## Parameters
+## `__init__` : Parameters
+
+### database, default None
+see [Database](database.md)
+If None, the database is instantiated automatically.
+
+
+### data :  str or path, default './'
+see [Database](database.md)
+
 
 ### protocol : {'ws', 'wss'}, default 'ws'
 representing the websocket protocol. Use either `ws` or `wss`.
@@ -66,14 +75,13 @@ def on_shutdown(sv: Server = None, db: Database = None):
 Executes when the server shuts down.
 Use this resolve database connections or save the current data to disk.
 
-### Channels : list of Channels
-
-
-
-
-
-
-
-
-
-
+### channels : list of Channel objects, default []
+See [Channel](channel.md)
+### models : list of Model objects, default []
+See [Model](model.md)
+### signals : list of Signal objects, default []
+See [Signal](signal.md)
+### tasks : list of Task objects, default []
+See [Task](task.md)
+### headers : list of Header objects, default []
+See [Header](header.md)

@@ -18,17 +18,19 @@ pd.options.mode.chained_assignment = None
 
 
 class Database:
-    def __init__(self, models: ModelManager = ModelManager(), path: str = 'data/', archive_path: str = 'archive/',
-                 archive_limit: int = 0):
+    def __init__(
+            self,
+            models: ModelManager = ModelManager(),
+            data: str = './',
+            archive: str = 'archive/',
+        ):
         '''
         Simple in-memory database built with pandas to store data in ram.
         This is a "Pandas Database".
         '''
         self.models = models
-        # TODO ensure this is OS compatible.
-        self.path = path
-        self.archive_path = archive_path
-        self.archive_limit = archive_limit
+        self.data = data
+        self.archive = archive
 
     def __setitem__(self, key, value):
         self.__dict__[key] = value
@@ -70,7 +72,6 @@ class Database:
 
                     column, operator = field.split('__', 1)
 
-                    # FK lookup.
                     if (foreign_model := self.models[model_name]()._schema.datatypes().get(column)) in self.models:
                         assert (
                             operator not in column_filters.keys()
@@ -155,13 +156,10 @@ class Database:
         return self.create(model_name, **kwargs)
 
     def archive(self, model_name: str, query: pd.DataFrame, cascade=False):
-        assert self.models[model_name], f'Uknown model "{model_name}"'
-
-        if self.archive_limit > 0:
-            query = query.tail(self.archive_limit)
+        assert self.models[model_name], f'Unknown model "{model_name}"'
 
         if not query.empty:
-            json_file_path = os.path.join(self.archive_path, f'{model_name}.json')
+            json_file_path = os.path.join(self.archive, f'{model_name}.json')
             query.to_json(json_file_path, orient='records', indent=4)
             self.drop(model_name, '')
 
@@ -221,12 +219,12 @@ class Database:
 
     def save(self):
         for model in self.models:
-            json_file_path = os.path.join(self.path, f'{model.__name__}.json')
+            json_file_path = os.path.join(self.data, f'{model.__name__}.json')
             self[model.__name__].to_json(json_file_path, orient='records', indent=4)
 
     def load(self):
         for model in self.models:
-            json_file_path = os.path.join(self.path, f'{model.__name__}.json')
+            json_file_path = os.path.join(self.data, f'{model.__name__}.json')
             if os.path.isfile(json_file_path):
                 datatypes = model()._schema.datatypes()
                 self[model.__name__] = pd.read_json(json_file_path, orient='records', convert_dates=False,
