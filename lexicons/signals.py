@@ -13,7 +13,7 @@ class Signal:
 
         :: return :: dict, [...channel_names]
         '''
-        raise Exception('Signal - Execute method not implimented.')
+        raise Exception('Signal - Execute method not implemented.')
         return self.response(data, channels)
 
 

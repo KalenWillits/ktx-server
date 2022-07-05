@@ -131,11 +131,12 @@ dmypy.json
 # Vim
 *.sw*
 
-# Leviathan
+# Lexicons
 data/
 data/
 .salt
 
-
+# Development and testing
 sandbox/*
-sandbox/
+.lexicons/*
+activate

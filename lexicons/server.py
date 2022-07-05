@@ -18,10 +18,6 @@ from .database import Database
 
 
 class Server:
-    '''
-    # TODO - rewrite
-    '''
-    # TODO forget os.environ, user settings file. / Create default settings in package
     def __init__(
         self,
         protocol: str = os.environ.get('PROTOCOL', 'ws'),
@@ -50,7 +46,6 @@ class Server:
         self.debug = debug
         self.cache = cache
 
-        # TODO move clients to cache
         self.clients = {}
 
         if hasattr(self, 'database'):
@@ -170,7 +165,7 @@ class Server:
         self.clients[websocket.pk] = websocket
 
     async def unregister(self, websocket):
-        self.on_log(status='UNREGISTER-CLOSE-CONNECTION', data={'address': websocket.remote_address}, sv=self,
+        self.on_log(status='UNREGISTER-CLOSED-CONNECTION', data={'address': websocket.remote_address}, sv=self,
                  db=self.database,
                  ws=websocket)
         del self.clients[websocket.pk]
@@ -183,6 +178,7 @@ class Server:
 
         if self.check_if_trusted(websocket) and self.handle_headers(websocket.request_headers, websocket=websocket):
             self.on_connect(ws=websocket, sv=self, db=self.database)
+
             await self.register(websocket)
             try:
                 async for payload in websocket:
