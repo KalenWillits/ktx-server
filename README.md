@@ -180,7 +180,7 @@ class OnShutdown(Task.Shutdown):
 
 ### Installing components to server
 ```
-from lexicons import Database, Server, ModelManager, SignalManager, TaskManager, ChannelManager, HeaderManager
+from lexicons import Server, ModelManager, SignalManager, TaskManager, ChannelManager, HeaderManager
 
 headers = HeaderManager(Login)
 models = ModelManager(User, ChatMessage)
@@ -195,3 +195,8 @@ if __name__ == "__main__":
     server.run()
 
 ```
+
+
+# TODO 
+- [] Create script for starting a new project
+- [] Create frontend websocket client for testing interaction
