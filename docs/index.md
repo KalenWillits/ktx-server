@@ -1,1 +1,1 @@
-[Server](index.md)
+[Server](server.md)
