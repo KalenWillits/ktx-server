@@ -3,7 +3,7 @@
 class Channel:
     def __init__(self, name: str = None, subscribers: set = set()):
         self.subscribers = set(subscribers)
-        self.name = name.lower() if name else self.__class__.__name__.lower()
+        self.name = name if name else self.__class__.__name__
 
     def subscribe(self, websocket_pk):
         self.subscribers.add(websocket_pk)
@@ -22,7 +22,7 @@ class ChannelManager:
     def __init__(self, *channels):
         self.__channels__ = {}
         for channel in channels:
-            self.__channels__[channel.__name__.lower()] = channel()
+            self.__channels__[channel.__name__] = channel()
 
     def __getitem__(self, channel_name: str) -> Channel:
         return self.__channels__.get(channel_name)
