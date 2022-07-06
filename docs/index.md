@@ -94,7 +94,7 @@ returned. Signals are also required to allow clients to subscribe to channels.
 
 
 [Task](task.md)
-Tasks are asynchronous functions that can be scheduled during runtime. There are tree types of tasks each with their 
+- Tasks are asynchronous functions that can be scheduled during runtime. There are tree types of tasks each with their 
 own asynchronous execute method. Startup, Interval, and Shutdown. Interval tasks require a "timer" method to also be
 overwritten. The timer method returns the interval in seconds between execute method executions.
 
