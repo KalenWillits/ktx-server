@@ -1,3 +1,6 @@
+[<- Back](index.md)
+
+
 # Header
 A header is an object that runs the execute method before a websocket connection is established.
 The execute method returns a boolean value and is passed to the server.gate function. An example of a login header is:

@@ -1,3 +1,5 @@
+[<- Back](index.md)
+
 # Database
 
 ## Parameters
@@ -53,4 +55,3 @@ Saves all tables to an individual json file at self.data.
 
 ### load():
 Loads all tables from save.
-

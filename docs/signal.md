@@ -1,3 +1,6 @@
+[<- Back](index.md)
+
+
 # Signal
 A signal is a websocket endpoint with a execute method. The execute method returns a response object that is serialized
 into a json object and sent across all selected channels. The syntax looks like:

@@ -1,8 +1,18 @@
+[<- Back](index.md)
+
 # Server
+The server is the main component and will manage the setup and instantiation of the database based on the set 
+configuration. However, as a project scales it is more common to interact with the database component as that is where
+the data is generally stored. 
 
-Entry point of the application.
+It is entirely possible to forgo the use of the database component and instantiate a connector to a larger typical 
+relational database. In this case, it is recommended to place the connector on the sv(Server) or db(Database) Component
+as an attribute in a startup task or server hook.
 
-## `__init__` : Parameters
+Another possible configuration is to populated the database with only active session-based data and dump non-active
+sessions. This would involve querying a large database via connector in a header or the on_connect hook and populating
+session data from there. This could potentially slow login times but speed up application interaction.
+
 
 ### database, default None
 see [Database](database.md)

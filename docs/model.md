@@ -1,3 +1,5 @@
+[<- Back](index.md)
+
 # Model
 Models are objects that describe a the schema of a table in the database. 
 Models have a primary key uuid as a string shortened to `pk`.

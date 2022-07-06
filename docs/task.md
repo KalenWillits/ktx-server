@@ -1,3 +1,6 @@
+[<- Back](index.md)
+
+
 # Task
 A task is a object with an asynchronous execute method that triggers automatically given a certain amount of time or during a
 defined server event.
