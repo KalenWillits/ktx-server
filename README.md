@@ -95,6 +95,7 @@ signals, tasks, and channels.
 
 # TODO 
 - [] Complete base documentation
+- [] Reverse foreign key lookups
 - [] Write use-case examples
 - [] Create script for starting a new project
 - [] Create frontend websocket client for testing interaction

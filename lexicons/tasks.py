@@ -19,12 +19,12 @@ class Startup(BaseTask):
 
     def delay(self, **kwargs):
         '''Overwrite this method to add a delay before executing the startup task.
-        this will also delay subsequent tasks from starting.'''
+        This will also delay subsequent tasks from starting.'''
         return 0
 
     async def execute(self, **kwargs):
         'Overwrite this method to create custom tasks.'
-        raise Exception(f'[ERROR] Task {self.__class__.__name__} execute method not implimented')
+        raise Exception(f'[ERROR] Task {self.__class__.__name__} execute method not implemented')
 
 
 class Interval(BaseTask):
@@ -33,11 +33,11 @@ class Interval(BaseTask):
         Overwrite this function to return the interval of time between task executions in seconds
         as an integer.
         '''
-        raise Exception(f'[ERROR] Task {self._name} timer method not implimented')
+        raise Exception(f'[ERROR] Task {self._name} timer method not implemented')
 
     async def execute(self, **kwargs):
         'Overwrite this method to create custom tasks.'
-        raise Exception(f'[ERROR] Task {self.__class__.__name__} execute method not implimented')
+        raise Exception(f'[ERROR] Task {self.__class__.__name__} execute method not implemented')
 
 
 class Shutdown(BaseTask):
@@ -45,7 +45,7 @@ class Shutdown(BaseTask):
 
     async def execute(self, **kwargs):
         'Overwrite this method to create custom tasks.'
-        raise Exception(f'[ERROR] Task {self.__class__.__name__} execute method not implimented')
+        raise Exception(f'[ERROR] Task {self.__class__.__name__} execute method not implemented')
 
 
 class Task:
