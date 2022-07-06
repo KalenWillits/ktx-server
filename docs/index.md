@@ -29,6 +29,7 @@ The database object handles in-memory storage of the DataFrames, enforces model 
 
 
 
+
 ### Component commonalities
 Although building out a Lexicons server usually consists of interacting with the below seven different components, 
 there are some commonalities and jargon that should be addressed before moving on.
@@ -48,6 +49,25 @@ The shorthand for the database model passed as a key word argument to all execut
 ### ws : (Websocket)
 The shorthand variable for websocket. Passed as a keyword argument to header and signal execute methods.
 
+### Installing a component
+Installing a component on the server object means to pass it as a list to the corresponding kwarg during instantiation. 
+A manager object will be created to handle the management of the objects within the server from there.
+
+For example, to install a `User` model on the server:
+```
+from lexicons import Server
+
+sv = Server(User)
+```
+
+Depending on your project architecture, you may want to categorize your component lists manually.
+In this case, you could install your `User` component like this:
+
+```
+from lexicons import Server
+
+sv = Server(models=[User])
+```
 
 
 [Header](header.md)

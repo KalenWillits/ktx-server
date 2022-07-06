@@ -40,14 +40,10 @@ class GetData(Signal):
 
 
 # Install components and instantiate the server application.
-server = Server(
-        signals=[GetData],
-        channels=[Public],
-        on_connect=on_connect,
-    )
+sv = Server(Public, GetData, on_connect=on_connect)
 
 if __name__ == '__main__':
-    server.run()
+    sv.run()
 ```
 
 ## Start the server

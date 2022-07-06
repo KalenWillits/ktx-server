@@ -1,3 +1,4 @@
+from collections import defaultdict
 import os
 import asyncio
 import orjson
@@ -8,18 +9,20 @@ import argparse
 from IPython import embed
 import websockets
 
-from .utils import on_connect, on_disconnect, on_start, on_shutdown, on_log
-from .channels import ChannelManager
-from .models import ModelManager
-from .signals import SignalManager
-from .tasks import TaskManager
-from .headers import HeaderManager
 from .database import Database
+from .utils import on_connect, on_disconnect, on_start, on_shutdown, on_log
+from .channels import ChannelManager, Channel
+from .models import ModelManager, Model
+from .signals import SignalManager, Signal
+from .tasks import TaskManager, Task
+from .headers import HeaderManager, Header
+
 
 
 class Server:
     def __init__(
         self,
+        *components,
         protocol: str = os.environ.get('PROTOCOL', 'ws'),
         host: str = os.environ.get('HOST', 'localhost'),
         port: int = os.environ.get('PORT', 5000),
@@ -38,8 +41,20 @@ class Server:
         signals: list = [],
         tasks: list = [],
         headers: list = [],
-
     ):
+
+        for component in components:
+            if issubclass(component, Channel):
+                channels.append(component)
+            elif issubclass(component, Model):
+                models.append(component)
+            elif issubclass(component, Signal):
+                signals.append(component)
+            elif issubclass(component, Task):
+                tasks.append(component)
+            elif issubclass(component, Header):
+                headers.append(component)
+
         self.host = host
         self.port = port
         self.debug = debug
@@ -49,7 +64,7 @@ class Server:
         if hasattr(self, 'database'):
             self.database = database
         else:
-            self.database = Database(models=models, path=data)
+            self.database = Database(models=models, data=data)
 
         self.tasks = TaskManager(*tasks)
         self.models = ModelManager(*models)

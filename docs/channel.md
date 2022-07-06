@@ -19,3 +19,10 @@ Adds a connection to the broadcast list.
 ### unsubscribe(websocket_pk: str)
 Removes a connection from the broadcast list.
 
+
+```
+from lexicons import Channel
+
+class Public(Channel):
+    pass
+```
