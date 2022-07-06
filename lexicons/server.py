@@ -61,10 +61,6 @@ class Server:
 
         self.clients = {}
 
-        if hasattr(self, 'database'):
-            self.database = database
-        else:
-            self.database = Database(models=models, data=data)
 
         self.tasks = TaskManager(*tasks)
         self.models = ModelManager(*models)
@@ -77,6 +73,11 @@ class Server:
         self.on_start = on_start
         self.on_shutdown = on_shutdown
         self.on_log = on_log
+
+        if hasattr(self, 'database'):
+            self.database = database
+        else:
+            self.database = Database(models=self.model, data=data)
 
         self.trust = trust
         self.gate = gate

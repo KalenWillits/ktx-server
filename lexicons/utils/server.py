@@ -43,7 +43,8 @@ def on_log(ws=None, sv=None, db=None, status=None, data=None, error=None):
 
         else:
             out += pretty_data
-
+    else:
+        data = ''
 
 
     if sv.debug:

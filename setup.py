@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 import codecs
 import os
 
-VERSION = '0.1.4'
+VERSION = '0.1.5'
 DESCRIPTION = 'Stateless websocket server framework for highly dynamic communication.'
 with open('README.md') as readme:
     LONG_DESCRIPTION=readme.read()
