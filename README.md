@@ -1,6 +1,4 @@
 # Lexicons
-Backend Websocket server for simple db access and rapid development. 
-
 Lexicons is a stateless websocket server framework written in Python designed to handle small and medium sized data 
 sets. The relational database is powered by Pandas and lives in memory at run time. Only json data types are supported. 
 By default, the server is stateless and data will need to be populated on each restart. However, runtime hooks such as 
