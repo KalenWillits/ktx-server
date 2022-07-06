@@ -2,6 +2,8 @@
 Backend Websocket server for simple db access and rapid development. 
 **This project is currently in the prototype phase and the documentation is incomplete.**
 
+Read the [full documentation](https://github.com/KalenWillits/lexicons/blob/main/docs/index.md) for more details.
+
 
 # Quick Start
 
