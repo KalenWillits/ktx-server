@@ -11,6 +11,7 @@ extendable components that build out the application.
 
 Read the [full documentation](https://github.com/KalenWillits/lexicons/blob/main/docs/index.md) for more details.
 
+See a working [public chat room](https://github.com/KalenWillits/lexicons-example) example.
 
 # Usage
 ## Quick Start
