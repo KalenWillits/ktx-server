@@ -77,7 +77,7 @@ class Server:
         if hasattr(self, 'database'):
             self.database = database
         else:
-            self.database = Database(models=self.model, data=data)
+            self.database = Database(models=self.models, data=data)
 
         self.trust = trust
         self.gate = gate
