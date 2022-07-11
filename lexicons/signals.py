@@ -1,9 +1,19 @@
+import asyncio
+import orjson
+
+
 class Signal:
     def __init__(self):
         self._name = self.__class__.__name__
 
-    def response(self, data: dict | list | str | int, channels: list):
-        return {self._name: data}, channels
+    def response(self, payload: dict | list | str | int, channels: list):
+        return {self._name: payload}, channels
+
+    def send(self, ws, payload):
+        '''
+        Method designed to send a payload to a individual websocket.
+        '''
+        asyncio.ensure_future(ws.send(orjson.dumps(payload)))
 
     def execute(self, **kwargs):
         data = {}
