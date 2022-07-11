@@ -16,7 +16,7 @@ class Signal:
         asyncio.ensure_future(ws.send(orjson.dumps(payload)))
 
     def execute(self, **kwargs):
-        data = {}
+        payload = {}
         channels = []
         '''
         Overwrite this method to create a custom signal.
@@ -24,7 +24,7 @@ class Signal:
         :: return :: dict, [...channel_names]
         '''
         raise Exception('Signal - Execute method not implemented.')
-        return self.response(data, channels)
+        return self.response(payload, channels)
 
 
 class SignalManager:

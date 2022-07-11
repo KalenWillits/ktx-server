@@ -1,6 +1,17 @@
+import asyncio
+import orjson
+
+
 class Header:
     def __init__(self):
         self._name = self.__class__.__name__
+
+    def send(self, ws, payload):
+        '''
+        Method designed to send a payload to a individual websocket.
+        '''
+        asyncio.ensure_future(ws.send(orjson.dumps(payload)))
+
 
     def execute(self, **kwargs) -> bool:
         raise Exception('[ERROR] Header {self._name} execute functon not implimented.')
