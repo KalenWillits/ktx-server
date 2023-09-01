@@ -1,5 +1,5 @@
 # Lexicons
-Lexicons is a stateless websocket server framework written in Python designed to handle small and medium sized data 
+Lexicons is a stateless middleware websocket server framework written in Python designed to handle small and medium sized data 
 sets. The relational database is powered by Pandas and lives in memory at run time. Only json data types are supported. 
 By default, the server is stateless and data will need to be populated on each restart. However, runtime hooks such as 
 on_start, on_connect, on_disconnect, and on_shutdown can be configured to change the behavior if needed. 
