@@ -5,7 +5,7 @@ By default, the server is stateless and data will need to be populated on each r
 on_start, on_connect, on_disconnect, and on_shutdown can be configured to change the behavior if needed. 
 
 Intended use-cases are for live chat and notification services, real-time location data, and as a backend connector
-for online multiplayer games. The server can run completely stateless or interface with other frameworks via the 
+for simulation data streams. The server can run completely stateless or interface with other frameworks via the 
 extendable components that build out the application.
 
 
